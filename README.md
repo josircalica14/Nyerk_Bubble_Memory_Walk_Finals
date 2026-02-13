@@ -2,15 +2,15 @@ Nyerk VR Bubble Musuem Finals Project
 
 Members:
 
-Kyla Gosim Brioso - Leader
+- Kyla Gosim Brioso - Leader
 
-Janin Azenith Blasco
+- Janin Azenith Blasco
 
-Josir James Calica
+- Josir James Calica
 
-Jubail Castro
+- Jubail Castro
 
-Mitchell Del Poso
+- Mitchell Del Poso
 
 Tech:
 
