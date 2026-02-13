@@ -15,29 +15,31 @@ class DetailView {
     this.isOpen = false;
     this.currentData = null;
     
-    // Camera/rotation state - start facing the title card with zoomed in view
-    this.rotation = { x: 0, y: -308.57 };
-    this.targetRotation = { x: 0, y: -308.57 };
-    this.zoom = 1.3;
-    this.targetZoom = 1.3;
+    // FPS Camera state - start at entrance of hallway
+    this.rotation = { x: 0, y: 0 }; // Looking straight down the hallway
+    this.targetRotation = { x: 0, y: 0 };
     
-    // Camera position for WASD movement
-    this.position = { x: 0, y: 0, z: 0 };
-    this.targetPosition = { x: 0, y: 0, z: 0 };
-    this.moveSpeed = 5;
-    this.boundaryRadius = 200; // Walking space - cards are at 650px, so 450px buffer from cards
+    // Camera position for FPS movement (start at entrance)
+    this.position = { x: 0, y: 0, z: 600 }; // Start 600px back from first cards
+    this.targetPosition = { x: 0, y: 0, z: 600 };
+    this.moveSpeed = 8; // Faster movement for hallway
+    
+    // Hallway boundaries
+    this.hallwayLength = 2800; // Total length of hallway (title card is at -2400)
+    this.hallwayWidth = 300; // Width boundaries (left/right)
     
     // Movement state
     this.keys = { w: false, a: false, s: false, d: false };
     
+    // Mouse look
     this.isDragging = false;
     this.lastMousePos = null;
-    this.dragSensitivity = 0.5; // Increased for more responsive look
+    this.mouseSensitivity = 0.3;
     this.animationFrameId = null;
     
-    // Zoom limits
-    this.MIN_ZOOM = 0.5;
-    this.MAX_ZOOM = 2.0;
+    // Vertical look limits
+    this.MIN_PITCH = -60; // Look down limit
+    this.MAX_PITCH = 60;  // Look up limit
     
     // Bind methods
     this.hide = this.hide.bind(this);
@@ -47,8 +49,7 @@ class DetailView {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
-    this.handleWheel = this.handleWheel.bind(this);
-    this.updateRotation = this.updateRotation.bind(this);
+    this.updateCamera = this.updateCamera.bind(this);
     
     // Set up event listeners
     this.backBtn.addEventListener('click', this.hide);
@@ -87,18 +88,15 @@ class DetailView {
     document.addEventListener('keydown', this.handleKeyDown);
     document.addEventListener('keyup', this.handleKeyUp);
     
-    // Add drag controls
+    // Add drag controls for mouse look
     this.detailView.addEventListener('mousedown', this.handleMouseDown);
     window.addEventListener('mousemove', this.handleMouseMove);
     window.addEventListener('mouseup', this.handleMouseUp);
     
-    // Add zoom control
-    this.detailView.addEventListener('wheel', this.handleWheel, { passive: false });
-    
     // Start animation loop
     this.startAnimation();
     
-    console.log('Detail view opened for:', data.title);
+    console.log('Detail view opened for:', data.title, '- Use WASD to move, mouse to look around');
   }
   
   /**
@@ -339,6 +337,134 @@ class DetailView {
     
     this.detailView.insertBefore(particleBg, this.detailView.firstChild);
     
+    // Create glowing entrance arch (attached to wall-grid so it moves with scene)
+    const existingArc = this.wallGrid.querySelector('.entrance-arch');
+    if (existingArc) existingArc.remove();
+    
+    // Create container with overflow to hide bottom line only
+    const archContainer = document.createElement('div');
+    archContainer.className = 'entrance-arch';
+    archContainer.style.cssText = `
+      position: absolute;
+      left: -625px;
+      top: -440px;
+      width: 1250px;
+      height: 615px;
+      transform: translateZ(700px);
+      transform-style: preserve-3d;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 50;
+    `;
+    
+    const entranceArch = document.createElement('div');
+    entranceArch.style.cssText = `
+      position: absolute;
+      left: 75px;
+      top: 75px;
+      width: 1100px;
+      height: 565px;
+      border: 6px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8);
+      border-bottom: none;
+      border-radius: 550px 550px 0 0;
+      box-shadow: 
+        0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1),
+        0 0 40px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8),
+        0 0 60px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6),
+        inset 0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5);
+      animation: archGlow 3s ease-in-out infinite alternate;
+    `;
+    
+    // Add animated light particles along the arc
+    for (let i = 0; i < 8; i++) {
+      const light = document.createElement('div');
+      const size = Math.random() * 8 + 6; // 6-14px
+      const duration = Math.random() * 3 + 3; // 3-6 seconds
+      const delay = (i / 8) * duration; // Stagger the lights
+      
+      light.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        background: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1);
+        border-radius: 50%;
+        box-shadow: 
+          0 0 ${size * 2}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1),
+          0 0 ${size * 4}px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8);
+        animation: arcLight${i} ${duration}s linear ${delay}s infinite;
+        opacity: 0;
+      `;
+      
+      entranceArch.appendChild(light);
+      
+      // Create animation for each light traveling along the arc
+      const lightStyle = document.createElement('style');
+      lightStyle.textContent = `
+        @keyframes arcLight${i} {
+          0% {
+            left: 0%;
+            bottom: 0px;
+            opacity: 0;
+          }
+          5% {
+            opacity: 1;
+          }
+          25% {
+            left: 25%;
+            bottom: ${565 * 0.7}px;
+            opacity: 1;
+          }
+          50% {
+            left: 50%;
+            bottom: ${565}px;
+            opacity: 1;
+          }
+          75% {
+            left: 75%;
+            bottom: ${565 * 0.7}px;
+            opacity: 1;
+          }
+          95% {
+            opacity: 1;
+          }
+          100% {
+            left: 100%;
+            bottom: 0px;
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(lightStyle);
+    }
+    
+    archContainer.appendChild(entranceArch);
+    
+    // Add glow animation
+    const archStyle = document.createElement('style');
+    archStyle.textContent = `
+      @keyframes archGlow {
+        0% {
+          border-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7);
+          box-shadow: 
+            0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1),
+            0 0 40px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8),
+            0 0 60px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6),
+            inset 0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5);
+        }
+        100% {
+          border-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1);
+          box-shadow: 
+            0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1),
+            0 0 60px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1),
+            0 0 90px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8),
+            inset 0 0 30px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7);
+        }
+      }
+    `;
+    document.head.appendChild(archStyle);
+    
+    this.wallGrid.appendChild(archContainer);
+    
     // Set dark base background
     this.detailView.style.background = `
       radial-gradient(ellipse at center, rgba(15, 20, 45, 1) 0%, rgba(5, 8, 20, 1) 100%)
@@ -513,13 +639,11 @@ class DetailView {
     // Stop animation
     this.stopAnimation();
     
-    // Reset rotation, zoom, and position to face title card
-    this.rotation = { x: 0, y: -308.57 };
-    this.targetRotation = { x: 0, y: -308.57 };
-    this.zoom = 1.3;
-    this.targetZoom = 1.3;
-    this.position = { x: 0, y: 0, z: 0 };
-    this.targetPosition = { x: 0, y: 0, z: 0 };
+    // Reset FPS camera to entrance of hallway
+    this.rotation = { x: 0, y: 0 };
+    this.targetRotation = { x: 0, y: 0 };
+    this.position = { x: 0, y: 0, z: 600 };
+    this.targetPosition = { x: 0, y: 0, z: 600 };
     this.keys = { w: false, a: false, s: false, d: false };
     
     console.log('Detail view closed');
@@ -554,7 +678,7 @@ class DetailView {
   }
   
   /**
-   * Handle mouse movement for drag rotation (first-person eye-look)
+   * Handle mouse movement for FPS camera look
    */
   handleMouseMove(event) {
     if (!this.isDragging || !this.lastMousePos) {
@@ -565,17 +689,15 @@ class DetailView {
     const deltaX = event.clientX - this.lastMousePos.x;
     const deltaY = event.clientY - this.lastMousePos.y;
     
-    // Update target rotation for first-person eye-look
-    // Mouse movement directly controls where you're looking
-    // Horizontal mouse movement rotates around Y axis (left/right look)
-    this.targetRotation.y += deltaX * this.dragSensitivity;
+    // Update target rotation for FPS look
+    // Horizontal mouse movement = yaw (left/right) - INVERTED for natural feel
+    this.targetRotation.y -= deltaX * this.mouseSensitivity;
     
-    // Vertical mouse movement rotates around X axis (up/down look)
-    // Invert deltaY so dragging down looks down (cards move up) and dragging up looks up (cards move down)
-    this.targetRotation.x -= deltaY * this.dragSensitivity;
+    // Vertical mouse movement = pitch (up/down)
+    this.targetRotation.x -= deltaY * this.mouseSensitivity;
     
-    // Clamp X rotation to prevent looking too far up or down
-    this.targetRotation.x = Math.max(-89, Math.min(89, this.targetRotation.x));
+    // Clamp vertical look to prevent over-rotation
+    this.targetRotation.x = Math.max(this.MIN_PITCH, Math.min(this.MAX_PITCH, this.targetRotation.x));
     
     // Update last position
     this.lastMousePos = {
@@ -585,24 +707,10 @@ class DetailView {
   }
   
   /**
-   * Handle mouse wheel for zoom
-   */
-  handleWheel(event) {
-    event.preventDefault();
-    
-    // Adjust zoom based on wheel delta
-    const delta = event.deltaY * -0.001;
-    this.targetZoom += delta;
-    
-    // Clamp zoom value
-    this.targetZoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, this.targetZoom));
-  }
-  
-  /**
    * Start animation loop
    */
   startAnimation() {
-    this.updateRotation();
+    this.updateCamera();
   }
   
   /**
@@ -616,29 +724,27 @@ class DetailView {
   }
   
   /**
-   * Update rotation and position with smooth interpolation
+   * Update FPS camera with smooth interpolation
    */
-  updateRotation() {
+  updateCamera() {
     if (!this.isOpen) return;
     
     // Update movement based on WASD keys
     this.updateMovement();
     
-    // Smooth interpolation for rotation
-    this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.1;
-    this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.1;
-    this.zoom += (this.targetZoom - this.zoom) * 0.1;
+    // Smooth interpolation for rotation (camera look)
+    this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.15;
+    this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.15;
     
-    // Smooth interpolation for position
-    this.position.x += (this.targetPosition.x - this.position.x) * 0.1;
-    this.position.y += (this.targetPosition.y - this.position.y) * 0.1;
-    this.position.z += (this.targetPosition.z - this.position.z) * 0.1;
+    // Smooth interpolation for position (camera movement)
+    this.position.x += (this.targetPosition.x - this.position.x) * 0.12;
+    this.position.y += (this.targetPosition.y - this.position.y) * 0.12;
+    this.position.z += (this.targetPosition.z - this.position.z) * 0.12;
     
-    // Apply transforms to wall-grid for first-person eye-look view
-    // First rotate the view (your eyes looking around), then move the world opposite to your position
+    // Apply FPS camera transform to wall-grid
+    // Rotate first (where you're looking), then translate (where you are)
     if (this.wallGrid) {
       this.wallGrid.style.transform = `
-        scale(${this.zoom})
         rotateX(${-this.rotation.x}deg)
         rotateY(${-this.rotation.y}deg)
         translate3d(${-this.position.x}px, ${-this.position.y}px, ${-this.position.z}px)
@@ -646,7 +752,7 @@ class DetailView {
     }
     
     // Continue animation
-    this.animationFrameId = requestAnimationFrame(this.updateRotation);
+    this.animationFrameId = requestAnimationFrame(this.updateCamera);
   }
   
   /**
@@ -688,49 +794,41 @@ class DetailView {
   }
   
   /**
-   * Update camera position based on WASD keys
+   * Update camera position based on WASD keys (FPS movement)
    */
   updateMovement() {
-    // Calculate movement direction based on camera rotation
-    // Movement is in the direction you're looking
-    const angleY = (this.rotation.y * Math.PI) / 180;
+    // Calculate movement direction based on camera yaw (Y rotation only)
+    const yaw = (this.rotation.y * Math.PI) / 180;
     
-    // Forward/backward (W/S)
+    // Forward/backward (W/S) - move along view direction
     if (this.keys.w) {
-      // Move forward in the direction we're looking
-      this.targetPosition.x -= Math.sin(angleY) * this.moveSpeed;
-      this.targetPosition.z -= Math.cos(angleY) * this.moveSpeed;
+      this.targetPosition.x -= Math.sin(yaw) * this.moveSpeed;
+      this.targetPosition.z -= Math.cos(yaw) * this.moveSpeed;
     }
     if (this.keys.s) {
-      // Move backward (opposite of forward)
-      this.targetPosition.x += Math.sin(angleY) * this.moveSpeed;
-      this.targetPosition.z += Math.cos(angleY) * this.moveSpeed;
+      this.targetPosition.x += Math.sin(yaw) * this.moveSpeed;
+      this.targetPosition.z += Math.cos(yaw) * this.moveSpeed;
     }
     
-    // Strafe left/right (A/D)
+    // Strafe left/right (A/D) - move perpendicular to view direction
     if (this.keys.a) {
-      // Strafe left (perpendicular to forward)
-      this.targetPosition.x -= Math.cos(angleY) * this.moveSpeed;
-      this.targetPosition.z += Math.sin(angleY) * this.moveSpeed;
+      this.targetPosition.x -= Math.cos(yaw) * this.moveSpeed;
+      this.targetPosition.z += Math.sin(yaw) * this.moveSpeed;
     }
     if (this.keys.d) {
-      // Strafe right (perpendicular to forward)
-      this.targetPosition.x += Math.cos(angleY) * this.moveSpeed;
-      this.targetPosition.z -= Math.sin(angleY) * this.moveSpeed;
+      this.targetPosition.x += Math.cos(yaw) * this.moveSpeed;
+      this.targetPosition.z -= Math.sin(yaw) * this.moveSpeed;
     }
     
-    // Apply boundary collision detection
-    const distance = Math.sqrt(
-      this.targetPosition.x * this.targetPosition.x +
-      this.targetPosition.z * this.targetPosition.z
-    );
+    // Apply hallway boundaries
+    // Limit left/right movement (X axis)
+    this.targetPosition.x = Math.max(-this.hallwayWidth, Math.min(this.hallwayWidth, this.targetPosition.x));
     
-    if (distance > this.boundaryRadius) {
-      // Clamp position to boundary circle
-      const angle = Math.atan2(this.targetPosition.z, this.targetPosition.x);
-      this.targetPosition.x = Math.cos(angle) * this.boundaryRadius;
-      this.targetPosition.z = Math.sin(angle) * this.boundaryRadius;
-    }
+    // Limit forward/backward movement (Z axis) - can't go past entrance or end
+    this.targetPosition.z = Math.max(-this.hallwayLength, Math.min(600, this.targetPosition.z));
+    
+    // Keep Y at 0 (no vertical movement)
+    this.targetPosition.y = 0;
   }
   
   /**
@@ -744,7 +842,6 @@ class DetailView {
     this.detailView.removeEventListener('mousedown', this.handleMouseDown);
     window.removeEventListener('mousemove', this.handleMouseMove);
     window.removeEventListener('mouseup', this.handleMouseUp);
-    this.detailView.removeEventListener('wheel', this.handleWheel);
     this.stopAnimation();
   }
 }

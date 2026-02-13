@@ -84,7 +84,7 @@
 }
 
 /* ===================================
-   3D Wall Grid - Inside Cube Layout
+   3D Hallway Grid - Corridor Layout
    =================================== */
 .wall-grid {
   position: absolute;
@@ -93,225 +93,133 @@
   width: 0;
   height: 0;
   transform-style: preserve-3d;
-  /* Wall grid moves opposite to camera position */
   transition: transform 0.05s linear;
+}
+
+/* Add floor for hallway - attached to wall-grid so it moves with the scene */
+.wall-grid::before {
+  content: '';
+  position: absolute;
+  left: -600px;
+  top: -2000px;
+  width: 1200px;
+  height: 4000px;
+  background: linear-gradient(to bottom,
+    rgba(15, 20, 40, 0.5) 0%,
+    rgba(10, 15, 30, 0.6) 50%,
+    rgba(5, 10, 20, 0.7) 100%);
+  border-left: 2px solid rgba(100, 200, 255, 0.2);
+  border-right: 2px solid rgba(100, 200, 255, 0.2);
+  transform-style: preserve-3d;
+  transform: rotateX(90deg) translateZ(-200px);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .wall-box {
   position: absolute;
   width: 450px;
-  background: linear-gradient(135deg, rgba(26, 31, 58, 0.9) 0%, rgba(10, 14, 39, 0.9) 100%);
+  min-height: 350px;
+  background: linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(10, 14, 39, 0.95) 100%);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
   padding: 2.5rem;
-  min-height: 280px;
   transform-style: preserve-3d;
   transition: all 0.3s ease;
   box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 0 30px rgba(255, 255, 255, 0.03);
-  animation: cardFloat 6s ease-in-out infinite;
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 0 30px rgba(255, 255, 255, 0.05);
+  transform-origin: bottom center;
 }
 
-/* Title card styling */
+/* Title card at entrance - centered */
 .wall-box.title-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  background: linear-gradient(135deg, rgba(100, 200, 255, 0.2) 0%, rgba(100, 150, 255, 0.2) 100%);
-  border: 2px solid rgba(100, 200, 255, 0.5);
+  min-height: 300px;
+  background: linear-gradient(135deg, rgba(100, 200, 255, 0.25) 0%, rgba(100, 150, 255, 0.25) 100%);
+  border: 3px solid rgba(100, 200, 255, 0.6);
 }
 
 .wall-box.title-card h2 {
-  font-size: 4rem;
+  font-size: 4.5rem;
   font-weight: 900;
   color: var(--text-primary);
   text-align: center;
   text-shadow: 
-    0 0 10px rgba(100, 200, 255, 1),
-    0 0 20px rgba(100, 200, 255, 0.8),
-    0 0 30px rgba(100, 200, 255, 0.6),
-    0 0 40px rgba(100, 200, 255, 0.4);
+    0 0 15px rgba(100, 200, 255, 1),
+    0 0 30px rgba(100, 200, 255, 0.8),
+    0 0 45px rgba(100, 200, 255, 0.6);
   margin: 0;
   animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+/* Hallway Layout - Cards positioned along corridor walls */
+/* Title card - at the END of hallway, centered */
+.wall-box.box-7 {
+  left: -225px;
+  top: -300px;
+  transform: translateZ(-1800px);
+}
+
+/* LEFT WALL CARDS - Mounted on left wall, facing inward */
+/* Increased spacing along hallway */
+/* Positioned higher on wall to prevent going through floor */
+.wall-box.box-1 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(-500px) translateZ(-200px) rotateY(90deg);
+}
+
+.wall-box.box-3 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(-500px) translateZ(-900px) rotateY(90deg);
+}
+
+.wall-box.box-5 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(-500px) translateZ(-1600px) rotateY(90deg);
+}
+
+/* RIGHT WALL CARDS - Mounted on right wall, facing inward */
+/* Increased spacing along hallway */
+/* Positioned higher on wall to prevent going through floor */
+.wall-box.box-2 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(500px) translateZ(-200px) rotateY(-90deg);
+}
+
+.wall-box.box-4 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(500px) translateZ(-900px) rotateY(-90deg);
+}
+
+.wall-box.box-6 {
+  left: -225px;
+  top: -350px;
+  transform: translateX(500px) translateZ(-1600px) rotateY(-90deg);
 }
 
 @keyframes titleGlow {
   from {
     text-shadow: 
-      0 0 10px rgba(100, 200, 255, 1),
-      0 0 20px rgba(100, 200, 255, 0.8),
-      0 0 30px rgba(100, 200, 255, 0.6),
-      0 0 40px rgba(100, 200, 255, 0.4);
+      0 0 15px rgba(100, 200, 255, 1),
+      0 0 30px rgba(100, 200, 255, 0.8),
+      0 0 45px rgba(100, 200, 255, 0.6);
   }
   to {
     text-shadow: 
-      0 0 20px rgba(100, 200, 255, 1),
-      0 0 30px rgba(100, 200, 255, 0.9),
-      0 0 40px rgba(100, 200, 255, 0.7),
-      0 0 60px rgba(100, 200, 255, 0.5);
-  }
-}
-
-/* Position cards in circular pattern around viewer - 7 cards at ~51.43° intervals */
-/* Card 1: Front (0°) */
-.wall-box.box-1 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(0deg) translateZ(-650px);
-  animation-delay: 0s;
-}
-
-/* Card 2: (51.43°) */
-.wall-box.box-2 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(51.43deg) translateZ(-650px);
-  animation-delay: 0.86s;
-}
-
-/* Card 3: (102.86°) */
-.wall-box.box-3 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(102.86deg) translateZ(-650px);
-  animation-delay: 1.71s;
-}
-
-/* Card 4: (154.29°) */
-.wall-box.box-4 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(154.29deg) translateZ(-650px);
-  animation-delay: 2.57s;
-}
-
-/* Card 5: (205.71°) */
-.wall-box.box-5 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(205.71deg) translateZ(-650px);
-  animation-delay: 3.43s;
-}
-
-/* Card 6: (257.14°) */
-.wall-box.box-6 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(257.14deg) translateZ(-650px);
-  animation-delay: 4.29s;
-}
-
-/* Card 7: Title Card (308.57°) */
-.wall-box.box-7 {
-  left: -225px;
-  top: -140px;
-  transform: rotateY(308.57deg) translateZ(-650px);
-  animation-delay: 5.14s;
-}
-
-@keyframes cardFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-15px);
-  }
-}
-
-/* Preserve transforms for each card during float */
-.wall-box.box-1 {
-  animation-name: cardFloat1;
-}
-
-.wall-box.box-2 {
-  animation-name: cardFloat2;
-}
-
-.wall-box.box-3 {
-  animation-name: cardFloat3;
-}
-
-.wall-box.box-4 {
-  animation-name: cardFloat4;
-}
-
-.wall-box.box-5 {
-  animation-name: cardFloat5;
-}
-
-.wall-box.box-6 {
-  animation-name: cardFloat6;
-}
-
-.wall-box.box-7 {
-  animation-name: cardFloat7;
-}
-
-@keyframes cardFloat1 {
-  0%, 100% {
-    transform: rotateY(0deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(0deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat2 {
-  0%, 100% {
-    transform: rotateY(51.43deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(51.43deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat3 {
-  0%, 100% {
-    transform: rotateY(102.86deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(102.86deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat4 {
-  0%, 100% {
-    transform: rotateY(154.29deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(154.29deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat5 {
-  0%, 100% {
-    transform: rotateY(205.71deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(205.71deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat6 {
-  0%, 100% {
-    transform: rotateY(257.14deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(257.14deg) translateZ(-650px) translateY(-15px);
-  }
-}
-
-@keyframes cardFloat7 {
-  0%, 100% {
-    transform: rotateY(308.57deg) translateZ(-650px) translateY(0px);
-  }
-  50% {
-    transform: rotateY(308.57deg) translateZ(-650px) translateY(-15px);
+      0 0 25px rgba(100, 200, 255, 1),
+      0 0 40px rgba(100, 200, 255, 0.9),
+      0 0 60px rgba(100, 200, 255, 0.7);
   }
 }
 
@@ -323,20 +231,18 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
 }
 
 .wall-box:hover {
-  transform: scale(1.1);
-  border-color: rgba(100, 200, 255, 0.4);
+  border-color: rgba(100, 200, 255, 0.5);
   box-shadow: 
-    0 30px 60px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(100, 200, 255, 0.4),
-    inset 0 0 40px rgba(255, 255, 255, 0.1);
-  animation-play-state: paused;
+    0 30px 70px rgba(0, 0, 0, 0.6),
+    0 0 50px rgba(100, 200, 255, 0.5),
+    inset 0 0 50px rgba(255, 255, 255, 0.1);
   z-index: 10;
 }
 
