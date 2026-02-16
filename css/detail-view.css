@@ -293,6 +293,19 @@
   transform: translateX(650px) translateZ(-2200px) rotateY(-90deg);
 }
 
+/* Sixth pair - furthest from entrance */
+.wall-box.box-13 {
+  left: -200px;
+  top: -290px;
+  transform: translateX(-650px) translateZ(-2800px) rotateY(90deg);
+}
+
+.wall-box.box-14 {
+  left: -200px;
+  top: -310px;
+  transform: translateX(650px) translateZ(-2800px) rotateY(-90deg);
+}
+
 .info-content {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -384,6 +397,8 @@
 .wall-box.box-10 { animation-delay: 0.8s; }
 .wall-box.box-11 { animation-delay: 1.3s; }
 .wall-box.box-12 { animation-delay: 1.8s; }
+.wall-box.box-13 { animation-delay: 2.3s; }
+.wall-box.box-14 { animation-delay: 2.8s; }
 
 /* Orb shine effect */
 .wall-box::before {
@@ -398,21 +413,6 @@
   opacity: 0.5;
   pointer-events: none;
   filter: blur(20px);
-}
-
-.wall-box:hover {
-  transform: scale(1.1) translateY(-10px);
-  border-color: rgba(100, 200, 255, 0.9);
-  box-shadow: 
-    0 0 60px rgba(100, 200, 255, 0.9),
-    0 0 120px rgba(100, 200, 255, 0.6),
-    0 0 50px rgba(100, 200, 255, 0.5),
-    inset 0 0 50px rgba(255, 255, 255, 0.1);
-  z-index: 10;
-}
-
-.wall-box:hover::before {
-  opacity: 1;
 }
 
 .wall-box h3 {
@@ -527,7 +527,8 @@
   border: none;
 }
 
-.card-images img {
+.card-images img,
+.card-images video {
   min-width: 100%;
   min-height: 100%;
   width: 150%;
@@ -537,6 +538,17 @@
   opacity: 0.85;
   filter: brightness(0.9) contrast(1.1) saturate(0.8) hue-rotate(10deg);
   mix-blend-mode: luminosity;
+}
+
+/* Apply vignette to videos as well */
+.card-images video {
+  filter: brightness(0.9) contrast(1.1) saturate(0.8);
+  /* Use contain for videos so they fit properly without zooming */
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  min-width: unset;
+  min-height: unset;
 }
 
 /* Spherical distortion overlay - creates curved glass effect */
@@ -641,11 +653,6 @@
   object-fit: cover;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease;
-}
-
-.card-images img:hover {
-  transform: scale(1.02);
 }
 
 /* ===================================
@@ -689,9 +696,5 @@
   .wall-box {
     min-height: 250px;
     padding: 2rem;
-  }
-  
-  .wall-box:hover {
-    transform: translateZ(40px) scale(1.02);
   }
 }

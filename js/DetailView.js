@@ -3,7 +3,7 @@
  * Manages the 3D wall portfolio detail page with 360° room view
  */
 class DetailView {
-  constructor() {
+  constructor(audioManager = null) {
     // Get references to elements
     this.detailView = document.getElementById('detail-view');
     this.backBtn = document.getElementById('back-btn');
@@ -14,6 +14,10 @@ class DetailView {
     // Track state
     this.isOpen = false;
     this.currentData = null;
+    
+    // Initialize orb modal with audio manager
+    this.orbModal = new OrbModal(audioManager);
+    this.audioManager = audioManager;
     
     // FPS Camera state - start at entrance of hallway
     this.rotation = { x: 0, y: 0 }; // Looking straight down the hallway
@@ -54,6 +58,39 @@ class DetailView {
     
     // Set up event listeners
     this.backBtn.addEventListener('click', this.hide);
+    
+    // Add click listeners to orbs
+    this.setupOrbClickListeners();
+  }
+  
+  /**
+   * Setup click listeners for memory orbs
+   */
+  setupOrbClickListeners() {
+    const orbs = this.wallGrid.querySelectorAll('.wall-box:not(.title-card)');
+    
+    orbs.forEach(orb => {
+      orb.style.cursor = 'pointer';
+      orb.addEventListener('click', (e) => {
+        // Prevent if clicking during camera movement
+        if (this.isDragging) return;
+        
+        const cardType = orb.getAttribute('data-card');
+        const title = orb.querySelector('h3')?.textContent || 'Memory Orb';
+        const imagesContainer = orb.querySelector('.card-images');
+        
+        if (imagesContainer) {
+          // Get all images and videos from the orb
+          const mediaElements = Array.from(imagesContainer.querySelectorAll('img, video'));
+          
+          if (mediaElements.length > 0) {
+            this.orbModal.open(title, mediaElements);
+          } else {
+            console.log('No media found in orb:', cardType);
+          }
+        }
+      });
+    });
   }
   
   /**
@@ -69,6 +106,18 @@ class DetailView {
     const portfolioTitle = document.getElementById('portfolio-title');
     if (portfolioTitle) {
       portfolioTitle.textContent = `${data.title}'s Memory Hall`;
+    }
+    
+    // Update card titles if custom titles are provided
+    if (data.cardTitles) {
+      const cards = this.wallGrid.querySelectorAll('.wall-box');
+      cards.forEach(card => {
+        const cardType = card.getAttribute('data-card');
+        const h3 = card.querySelector('h3');
+        if (h3 && data.cardTitles[cardType]) {
+          h3.textContent = data.cardTitles[cardType];
+        }
+      });
     }
     
     // Apply color theme based on portfolio color
@@ -640,7 +689,9 @@ class DetailView {
       'placeholder1': 'placeholder1',
       'placeholder2': 'placeholder2',
       'placeholder3': 'placeholder3',
-      'placeholder4': 'placeholder4'
+      'placeholder4': 'placeholder4',
+      'placeholder5': 'placeholder5',
+      'placeholder6': 'placeholder6'
     };
     
     // Load images for each card

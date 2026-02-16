@@ -28,7 +28,21 @@ const portfolioData = [
     description: "CupofJay - A creative portfolio showcasing innovative designs and artistic expressions.",
     image: "assets/images/cupofjay.jpg",
     color: "#0000FF",
-    folder: "cupofjay" // Folder: assets/portfolios/cupofjay/
+    folder: "cupofjay", // Folder: assets/portfolios/cupofjay/
+    cardTitles: {
+      overview: "My Story",
+      gallery: "Photo Album",
+      technologies: "Skills & Tools",
+      details: "About Me",
+      links: "Connect",
+      contact: "Get in Touch",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 2,
@@ -36,7 +50,21 @@ const portfolioData = [
     description: "Kylabidaboo - Unique and vibrant creative works that push the boundaries of imagination.",
     image: "assets/images/kylabidaboo.jpg",
     color: "#E24A90",
-    folder: "kylabidaboo"
+    folder: "kylabidaboo",
+    cardTitles: {
+      overview: "Little Pookielay",
+      gallery: "Pem <3",
+      technologies: "1st Bday Celeb with Nyerk",
+      details: "OJT Party!",
+      links: "With Papa & Kuya",
+      contact: "Hehe",
+      placeholder1: "Nyerk Groupie with Sir Ray",
+      placeholder2: "With Mah Pinsan",
+      placeholder3: "My Besties",
+      placeholder4: "My Family",
+      placeholder5: "BFFs",
+      placeholder6: "Wacky with Fam"
+    }
   },
   {
     id: 3,
@@ -44,7 +72,21 @@ const portfolioData = [
     description: "Jnnzth - Innovative solutions and creative approaches to modern challenges.",
     image: "assets/images/jnnzth.jpg",
     color: "#90E24A",
-    folder: "jnnzth"
+    folder: "jnnzth",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 4,
@@ -52,7 +94,21 @@ const portfolioData = [
     description: "Bonchan - Artistic excellence and creative mastery in every project.",
     image: "assets/images/bonchan.jpg",
     color: "#FF4500",
-    folder: "bonchan"
+    folder: "bonchan",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 5,
@@ -60,7 +116,21 @@ const portfolioData = [
     description: "Beyl - Cutting-edge designs that blend functionality with aesthetic appeal.",
     image: "assets/images/beyl.jpg",
     color: "#FFD700",
-    folder: "beyl"
+    folder: "beyl",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 6,
@@ -68,7 +138,21 @@ const portfolioData = [
     description: "Juan.through.tree - Nature-inspired creativity and organic design philosophy.",
     image: "assets/images/juan.jpg",
     color: "#8B4513",
-    folder: "juan"
+    folder: "juan",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 7,
@@ -76,7 +160,21 @@ const portfolioData = [
     description: "Shine - Brilliant concepts that illuminate the path to creative excellence.",
     image: "assets/images/shine.jpg",
     color: "#FFFFFF",
-    folder: "shine"
+    folder: "shine",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 8,
@@ -84,7 +182,21 @@ const portfolioData = [
     description: "Mfghozt - Mysterious and captivating designs that leave a lasting impression.",
     image: "assets/images/mfghozt.jpg",
     color: "#000000",
-    folder: "mfghozt"
+    folder: "mfghozt",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 9,
@@ -92,7 +204,21 @@ const portfolioData = [
     description: "Cian - Bold and dynamic creative solutions for the modern world.",
     image: "assets/images/cian.jpg",
     color: "#FF8C00",
-    folder: "cian"
+    folder: "cian",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 10,
@@ -100,7 +226,21 @@ const portfolioData = [
     description: "Well Known Renjard - Renowned for exceptional quality and innovative thinking.",
     image: "assets/images/renjard.jpg",
     color: "#9400D3",
-    folder: "renjard"
+    folder: "renjard",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 11,
@@ -108,7 +248,21 @@ const portfolioData = [
     description: "Pibee - Sweet and delightful designs that bring joy to every project.",
     image: "assets/images/pibee.jpg",
     color: "#00CED1",
-    folder: "pibee"
+    folder: "pibee",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 12,
@@ -116,7 +270,21 @@ const portfolioData = [
     description: "Jem - Precious and refined creative works that sparkle with originality.",
     image: "assets/images/jem.jpg",
     color: "#4B0082",
-    folder: "jem"
+    folder: "jem",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 13,
@@ -124,7 +292,21 @@ const portfolioData = [
     description: "KCCalip - Professional excellence and creative innovation in every detail.",
     image: "assets/images/kccalip.jpg",
     color: "#32CD32",
-    folder: "kccalip"
+    folder: "kccalip",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   },
   {
     id: 14,
@@ -132,7 +314,21 @@ const portfolioData = [
     description: "Alyssa - Elegant and sophisticated designs that embody timeless beauty.",
     image: "assets/images/alyssa.jpg",
     color: "#FF6347",
-    folder: "alyssa"
+    folder: "alyssa",
+    cardTitles: {
+      overview: "Overview",
+      gallery: "Gallery",
+      technologies: "Technologies",
+      details: "Details",
+      links: "Links",
+      contact: "Contact",
+      placeholder1: "Placeholder 1",
+      placeholder2: "Placeholder 2",
+      placeholder3: "Placeholder 3",
+      placeholder4: "Placeholder 4",
+      placeholder5: "Placeholder 5",
+      placeholder6: "Placeholder 6"
+    }
   }
 ];
 

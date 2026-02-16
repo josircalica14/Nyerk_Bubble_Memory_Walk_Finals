@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/content-panel.css">
     <link rel="stylesheet" href="css/loading-page.css">
     <link rel="stylesheet" href="css/detail-view.css">
+    <link rel="stylesheet" href="css/orb-modal.css">
     <link rel="stylesheet" href="css/fallback.css">
 </head>
 <body>
@@ -124,6 +125,16 @@
                         <div class="card-images"></div>
                     </div>
                     
+                    <div class="wall-box box-13" data-card="placeholder5">
+                        <h3>Placeholder 5</h3>
+                        <div class="card-images"></div>
+                    </div>
+                    
+                    <div class="wall-box box-14" data-card="placeholder6">
+                        <h3>Placeholder 6</h3>
+                        <div class="card-images"></div>
+                    </div>
+                    
                     <div class="wall-box box-7 title-card">
                         <h2 id="portfolio-title">Memory Hall</h2>
                     </div>
@@ -135,6 +146,8 @@
     <!-- JavaScript Files -->
     <script src="js/utils.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/AudioManager.js"></script>
+    <script src="js/OrbModal.js"></script>
     <script src="js/BubbleManager.js"></script>
     <script src="js/CameraController.js"></script>
     <script src="js/ContentPanel.js"></script>
@@ -152,11 +165,21 @@
             const enterBtn = document.getElementById('enter-btn');
             const museumSpace = document.getElementById('museum-space');
             
+            // Initialize Audio Manager early (on page load)
+            const audioManager = new AudioManager();
+            audioManager.init('assets/audio/background-music.mp3');
+            
+            // Store globally for debugging
+            window.audioManager = audioManager;
+            
             // Initially hide museum space
             museumSpace.style.opacity = '0';
             
             // Enter button click handler
             enterBtn.addEventListener('click', () => {
+                // Start background music when user clicks Enter
+                audioManager.play();
+                
                 // Fade out welcome screen
                 welcomeScreen.classList.add('hidden');
                 
@@ -166,12 +189,12 @@
                     museumSpace.style.opacity = '1';
                     
                     // Initialize the museum after animation
-                    initializeMuseum();
+                    initializeMuseum(audioManager);
                 }, 400);
             });
             
             // Function to initialize the museum
-            function initializeMuseum() {
+            function initializeMuseum(audioManager) {
                 // Get container element
                 const container = document.getElementById('museum-space');
                 if (!container) {
@@ -209,8 +232,8 @@
                     return;
                 }
                 
-                // Initialize DetailView
-                const detailView = new DetailView();
+                // Initialize DetailView with audio manager
+                const detailView = new DetailView(audioManager);
                 window.detailView = detailView;
                 
                 // Feature detection for 3D transforms
