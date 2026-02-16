@@ -31,7 +31,7 @@
   background: var(--bubble-color, rgba(100, 200, 255, 0.15));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   box-shadow: 
     0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 0 20px rgba(255, 255, 255, 0.1),
@@ -47,10 +47,13 @@
 
 /* Bubble image */
 .bubble-image {
-  width: 80%;
-  height: 80%;
+  width: 95%;
+  height: 95%;
   object-fit: cover;
   border-radius: 50%;
+  border: none;
+  outline: none;
+  box-shadow: none;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -89,6 +92,28 @@
   background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
+  z-index: 3;
+}
+
+/* Vignette border effect - subtle colored gradient fade around image */
+.bubble-inner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%,
+    transparent 0%,
+    transparent 20%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.4) 40%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.6) 50%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.8) 60%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 1) 70%);
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: normal;
 }
 
 /* ===================================
@@ -107,7 +132,6 @@
     0 12px 48px 0 rgba(31, 38, 135, 0.5),
     inset 0 0 30px rgba(255, 255, 255, 0.15),
     0 0 60px var(--bubble-color, rgba(100, 200, 255, 0.6));
-  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* ===================================
@@ -124,7 +148,6 @@
     inset 0 0 30px rgba(255, 255, 255, 0.15),
     0 0 60px var(--bubble-color, rgba(100, 200, 255, 0.6)),
     0 0 0 4px rgba(100, 200, 255, 0.8); /* Focus ring */
-  border-color: rgba(100, 200, 255, 1);
 }
 
 .bubble:focus-visible .bubble-inner {
@@ -134,7 +157,6 @@
     inset 0 0 30px rgba(255, 255, 255, 0.15),
     0 0 60px var(--bubble-color, rgba(100, 200, 255, 0.6)),
     0 0 0 4px rgba(100, 200, 255, 0.8);
-  border-color: rgba(100, 200, 255, 1);
 }
 
 /* ===================================
@@ -151,7 +173,6 @@
     0 16px 64px 0 rgba(31, 38, 135, 0.6),
     inset 0 0 40px rgba(255, 255, 255, 0.2),
     0 0 80px var(--bubble-color, rgba(100, 200, 255, 0.8));
-  border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* ===================================

@@ -117,6 +117,14 @@ class BubbleManager {
       // Set bubble color (from data or generate random)
       const color = item.color || this.generateRandomColor();
       bubble.style.setProperty('--bubble-color', color);
+      
+      // Extract RGB values for vignette effect
+      const rgb = this.extractRGB(color);
+      if (rgb) {
+        bubble.style.setProperty('--vignette-color-r', rgb.r);
+        bubble.style.setProperty('--vignette-color-g', rgb.g);
+        bubble.style.setProperty('--vignette-color-b', rgb.b);
+      }
 
       // Start bubbles at center (0, 0, 0) for animation
       bubble.style.setProperty('--x', '0px');
@@ -163,6 +171,34 @@ class BubbleManager {
     const saturation = 70 + Math.floor(Math.random() * 20); // 70-90%
     const lightness = 50 + Math.floor(Math.random() * 20); // 50-70%
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
+  /**
+   * Extract RGB values from a color string (hex, rgb, rgba, hsl, hsla)
+   * @param {String} color - Color string in any CSS format
+   * @returns {Object|null} Object with r, g, b properties or null if parsing fails
+   */
+  extractRGB(color) {
+    // Create a temporary element to let the browser parse the color
+    const temp = document.createElement('div');
+    temp.style.color = color;
+    document.body.appendChild(temp);
+    
+    // Get computed color (always in rgb/rgba format)
+    const computed = window.getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    
+    // Parse rgb/rgba format: rgb(r, g, b) or rgba(r, g, b, a)
+    const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      return {
+        r: parseInt(match[1]),
+        g: parseInt(match[2]),
+        b: parseInt(match[3])
+      };
+    }
+    
+    return null;
   }
 
   /**

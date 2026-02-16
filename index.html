@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/bubbles.css">
     <link rel="stylesheet" href="css/content-panel.css">
+    <link rel="stylesheet" href="css/loading-page.css">
     <link rel="stylesheet" href="css/detail-view.css">
     <link rel="stylesheet" href="css/fallback.css">
 </head>
@@ -44,15 +45,23 @@
                 <img class="content-image" src="" alt="" loading="lazy">
                 <h2 class="content-title"></h2>
                 <p class="content-description"></p>
-                <div class="content-actions">
-                    <button class="content-button">View Details</button>
-                    <button class="content-button">Contact</button>
-                </div>
+            </div>
+            <div class="content-actions">
+                <button class="content-button">View Details</button>
+                <button class="content-button">Contact</button>
             </div>
         </aside>
         
         <!-- Backdrop overlay -->
         <div class="backdrop" aria-hidden="true"></div>
+        
+        <!-- Loading Page -->
+        <div id="loading-page" class="loading-page" aria-hidden="true">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h2 class="loading-title">Entering Memory Hall...</h2>
+            </div>
+        </div>
         
         <!-- Detail View Page -->
         <div id="detail-view" class="detail-view" aria-hidden="true">
@@ -239,17 +248,40 @@
                     // Connect "View Details" button after museum is initialized
                     setTimeout(() => {
                         const viewDetailsBtn = document.querySelector('.content-button:first-child');
+                        const loadingPage = document.getElementById('loading-page');
+                        
                         if (viewDetailsBtn) {
                             console.log('View Details button found, attaching listener');
                             viewDetailsBtn.addEventListener('click', () => {
                                 console.log('View Details clicked');
                                 const contentPanel = museum.contentPanel;
                                 if (contentPanel && contentPanel.isOpen && contentPanel.currentData) {
+                                    const currentData = contentPanel.currentData;
+                                    
+                                    // Update loading title with person's name
+                                    const loadingTitle = loadingPage.querySelector('.loading-title');
+                                    if (loadingTitle && currentData.title) {
+                                        loadingTitle.textContent = `Entering ${currentData.title}'s Memory Hall...`;
+                                    }
+                                    
                                     // Close content panel
                                     contentPanel.hide();
-                                    // Show detail view
+                                    
+                                    // Show loading page after panel closes
                                     setTimeout(() => {
-                                        detailView.show(contentPanel.currentData);
+                                        loadingPage.classList.add('active');
+                                        loadingPage.setAttribute('aria-hidden', 'false');
+                                        
+                                        // Show detail view after loading delay
+                                        setTimeout(() => {
+                                            detailView.show(currentData);
+                                            
+                                            // Hide loading page after detail view is shown
+                                            setTimeout(() => {
+                                                loadingPage.classList.remove('active');
+                                                loadingPage.setAttribute('aria-hidden', 'true');
+                                            }, 500);
+                                        }, 1500); // Loading duration
                                     }, 400);
                                 }
                             });

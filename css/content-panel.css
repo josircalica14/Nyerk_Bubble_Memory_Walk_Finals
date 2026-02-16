@@ -30,17 +30,17 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
-  width: 500px;
-  max-width: 90vw;
-  max-height: 85vh;
-  background: linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(10, 14, 39, 0.95) 100%);
+  width: 400px;
+  height: 400px;
+  background: var(--bubble-color, rgba(100, 200, 255, 0.15));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  border: none;
+  border-radius: 50%;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.5),
-    inset 0 0 40px rgba(255, 255, 255, 0.05);
+    inset 0 0 40px rgba(255, 255, 255, 0.1),
+    0 0 60px var(--bubble-color, rgba(100, 200, 255, 0.5));
   z-index: 101;
   overflow: visible;
   opacity: 0;
@@ -52,23 +52,44 @@
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
   visibility: visible;
+  animation: modalFloat 4s ease-in-out infinite;
 }
 
-/* Inner content wrapper with overflow */
+/* Floating animation for modal */
+@keyframes modalFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1) translateY(-15px);
+  }
+}
+
+/* Vignette effect for content panel */
 .content-panel::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: 24px;
-  overflow: hidden;
-  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%,
+    transparent 0%,
+    transparent 20%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.4) 40%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.6) 50%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 0.8) 60%,
+    rgba(var(--vignette-color-r, 100), var(--vignette-color-g, 200), var(--vignette-color-b, 255), 1) 70%);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* Mobile adjustments */
 @media (max-width: 767px) {
   .content-panel {
-    width: 90vw;
-    max-height: 80vh;
+    width: 320px;
+    height: 320px;
   }
 }
 
@@ -113,52 +134,78 @@
    Content Body
    =================================== */
 .content-body {
-  padding: var(--spacing-lg);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
-/* Button placeholder section */
-.content-actions {
-  display: flex;
+/* Button placeholder section - positioned relative to content-panel */
+.content-panel .content-actions {
+  position: absolute !important;
+  bottom: -80px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: max-content;
+  z-index: 103 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .content-button {
-  flex: 1;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   background: rgba(100, 200, 255, 0.2);
-  border: 1px solid rgba(100, 200, 255, 0.3);
-  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 255, 0.4);
+  border-radius: 50px;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s var(--ease-smooth);
   text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
 }
 
 .content-button:hover {
   background: rgba(100, 200, 255, 0.3);
-  border-color: rgba(100, 200, 255, 0.5);
+  border-color: rgba(100, 200, 255, 0.6);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 200, 255, 0.3);
 }
 
 .content-button:active {
   transform: translateY(0);
 }
 
+/* Hide contact button */
+.content-button:last-child {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .content-body {
-    padding: var(--spacing-lg);
+    padding: 0;
   }
   
-  .content-actions {
-    flex-direction: column;
+  .content-panel .content-actions {
+    bottom: -70px;
+  }
+  
+  .content-button {
+    font-size: 0.85rem;
+    padding: var(--spacing-xs) var(--spacing-md);
   }
 }
 
@@ -166,18 +213,22 @@
    Content Image
    =================================== */
 .content-image {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
+  width: 95%;
+  height: 95%;
   object-fit: cover;
-  border-radius: 20px;
-  margin-bottom: var(--spacing-sm);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  box-shadow: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
 }
 
 @media (max-width: 767px) {
   .content-image {
-    aspect-ratio: 1 / 1;
+    width: 95%;
+    height: 95%;
   }
 }
 
@@ -188,48 +239,17 @@
 }
 
 /* ===================================
-   Content Title
+   Content Title - Hidden
    =================================== */
-/* 
- * WCAG AA Compliance:
- * White text (#ffffff) on dark gradient background (rgba(26, 31, 58, 0.95))
- * provides contrast ratio > 7:1 for large text (AAA compliant)
- */
 .content-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary); /* #ffffff */
-  margin-bottom: var(--spacing-sm);
-  line-height: 1.2;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-@media (max-width: 767px) {
-  .content-title {
-    font-size: 1.5rem;
-  }
+  display: none;
 }
 
 /* ===================================
-   Content Description
+   Content Description - Hidden
    =================================== */
-/* 
- * WCAG AA Compliance:
- * Light text (rgba(255, 255, 255, 0.8)) on dark background
- * provides contrast ratio > 4.5:1 for normal text
- */
 .content-description {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--text-secondary); /* rgba(255, 255, 255, 0.8) */
-  margin-bottom: var(--spacing-sm);
-}
-
-@media (max-width: 767px) {
-  .content-description {
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
+  display: none;
 }
 
 /* ===================================

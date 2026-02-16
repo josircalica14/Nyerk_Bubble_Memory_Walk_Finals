@@ -81,6 +81,25 @@ class ContentPanel {
       this.contentImage.style.display = 'none';
     }
     
+    // Set bubble color and vignette for the panel
+    if (data.color) {
+      this.panel.style.setProperty('--bubble-color', data.color);
+      
+      // Extract RGB values for vignette effect
+      const rgb = this.extractRGB(data.color);
+      if (rgb) {
+        this.panel.style.setProperty('--vignette-color-r', rgb.r);
+        this.panel.style.setProperty('--vignette-color-g', rgb.g);
+        this.panel.style.setProperty('--vignette-color-b', rgb.b);
+      }
+    }
+    
+    // Update button text to "Enter [Name]'s Memory Hall"
+    const viewDetailsBtn = this.panel.querySelector('.content-button:first-child');
+    if (viewDetailsBtn && data.title) {
+      viewDetailsBtn.textContent = `Enter ${data.title}'s Memory Hall`;
+    }
+    
     // Add active class to trigger slide-in animation
     requestAnimationFrame(() => {
       this.panel.classList.add('active');
@@ -104,6 +123,34 @@ class ContentPanel {
     setTimeout(() => {
       this.closeBtn.focus();
     }, 100);
+  }
+  
+  /**
+   * Extract RGB values from a color string (hex, rgb, rgba, hsl, hsla)
+   * @param {String} color - Color string in any CSS format
+   * @returns {Object|null} Object with r, g, b properties or null if parsing fails
+   */
+  extractRGB(color) {
+    // Create a temporary element to let the browser parse the color
+    const temp = document.createElement('div');
+    temp.style.color = color;
+    document.body.appendChild(temp);
+    
+    // Get computed color (always in rgb/rgba format)
+    const computed = window.getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    
+    // Parse rgb/rgba format: rgb(r, g, b) or rgba(r, g, b, a)
+    const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      return {
+        r: parseInt(match[1]),
+        g: parseInt(match[2]),
+        b: parseInt(match[3])
+      };
+    }
+    
+    return null;
   }
   
   /**

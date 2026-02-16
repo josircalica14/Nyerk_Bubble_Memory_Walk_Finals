@@ -11,13 +11,13 @@
   z-index: 200;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(100%);
-  transition: all 0.5s var(--ease-smooth);
+  transition: opacity 0.8s ease, visibility 0.8s ease;
   overflow: hidden;
   perspective: 600px;
   perspective-origin: 50% 50%;
   cursor: grab;
   user-select: none;
+  pointer-events: none;
 }
 
 .detail-view:active {
@@ -27,7 +27,7 @@
 .detail-view.active {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
+  pointer-events: auto;
 }
 
 /* ===================================
@@ -38,8 +38,8 @@
   top: 2rem;
   left: 2rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(100, 200, 255, 0.2);
-  border: 1px solid rgba(100, 200, 255, 0.3);
+  background: rgba(30, 35, 60, 0.95);
+  border: 2px solid rgba(100, 200, 255, 0.5);
   border-radius: 50px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -48,20 +48,28 @@
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  z-index: 201;
+  z-index: 999;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .back-button:hover {
   background: rgba(100, 200, 255, 0.3);
-  border-color: rgba(100, 200, 255, 0.5);
+  border-color: rgba(100, 200, 255, 0.8);
   transform: translateX(-5px);
+  box-shadow: 0 6px 16px rgba(100, 200, 255, 0.4);
+}
+
+.back-button:active {
+  transform: translateX(-3px) scale(0.98);
 }
 
 .back-button span {
   font-size: 1.5rem;
+  line-height: 1;
 }
 
 /* ===================================
