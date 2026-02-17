@@ -35,7 +35,7 @@
   box-shadow: 
     0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 0 20px rgba(255, 255, 255, 0.1),
-    0 0 40px var(--bubble-color, rgba(100, 200, 255, 0.3));
+    0 0 45px var(--bubble-color, rgba(100, 200, 255, 0.35));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,7 +131,7 @@
   box-shadow: 
     0 12px 48px 0 rgba(31, 38, 135, 0.5),
     inset 0 0 30px rgba(255, 255, 255, 0.15),
-    0 0 60px var(--bubble-color, rgba(100, 200, 255, 0.6));
+    0 0 65px var(--bubble-color, rgba(100, 200, 255, 0.65));
 }
 
 /* ===================================
@@ -172,7 +172,7 @@
   box-shadow: 
     0 16px 64px 0 rgba(31, 38, 135, 0.6),
     inset 0 0 40px rgba(255, 255, 255, 0.2),
-    0 0 80px var(--bubble-color, rgba(100, 200, 255, 0.8));
+    0 0 85px var(--bubble-color, rgba(100, 200, 255, 0.85));
 }
 
 /* ===================================

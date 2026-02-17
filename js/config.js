@@ -30,18 +30,18 @@ const portfolioData = [
     color: "#0000FF",
     folder: "cupofjay", // Folder: assets/portfolios/cupofjay/
     cardTitles: {
-      overview: "My Story",
-      gallery: "Photo Album",
-      technologies: "Skills & Tools",
-      details: "About Me",
-      links: "Connect",
-      contact: "Get in Touch",
-      placeholder1: "Placeholder 1",
-      placeholder2: "Placeholder 2",
-      placeholder3: "Placeholder 3",
-      placeholder4: "Placeholder 4",
-      placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      overview: "My Mini Me",
+      gallery: "Elyu",
+      technologies: "Throwback Tiktok",
+      details: "NYERK",
+      links: "With Mama",
+      contact: "Little Cookie <3",
+      placeholder1: "Little Jay with Ate Chuchay",
+      placeholder2: "With Kuya, wTito & Cousins",
+      placeholder3: "First swimming with friends",
+      placeholder4: "Enchanted Kingdom Throwback pic",
+      placeholder5: "Calica Cousins",
+      placeholder6: "Lakeside Sunset pic"
     }
   },
   {
@@ -53,14 +53,14 @@ const portfolioData = [
     folder: "kylabidaboo",
     cardTitles: {
       overview: "Little Pookielay",
-      gallery: "Pem <3",
-      technologies: "1st Bday Celeb with Nyerk",
-      details: "OJT Party!",
+      gallery: "Pem: besfriend in fur <3",
+      technologies: "Best Birthday with friends",
+      details: "IT Gang",
       links: "With Papa & Kuya",
-      contact: "Hehe",
-      placeholder1: "Nyerk Groupie with Sir Ray",
-      placeholder2: "With Mah Pinsan",
-      placeholder3: "My Besties",
+      contact: "With my soul sister",
+      placeholder1: "College buddies",
+      placeholder2: "With My fav cousin",
+      placeholder3: "With ante and aleng",
       placeholder4: "My Family",
       placeholder5: "BFFs",
       placeholder6: "Wacky with Fam"

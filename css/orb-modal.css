@@ -106,37 +106,36 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Media container with adaptive orientation */
 .orb-modal-media {
   position: relative;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: visible;
-  padding: 20px;
 }
 
 /* Landscape orientation (wider than tall) */
 .orb-modal-media.landscape {
-  max-width: 90vw;
-  max-height: calc(95vh - 80px);
+  width: auto;
+  height: auto;
 }
 
 /* Portrait orientation (taller than wide) */
 .orb-modal-media.portrait {
-  max-width: 70vw;
-  max-height: calc(95vh - 80px);
+  width: auto;
+  height: auto;
 }
 
 .orb-modal-media img,
 .orb-modal-media video {
-  max-width: 100%;
-  max-height: 100%;
+  max-width: calc(95vw - 80px);
+  max-height: calc(95vh - 140px);
   width: auto;
   height: auto;
   object-fit: contain;

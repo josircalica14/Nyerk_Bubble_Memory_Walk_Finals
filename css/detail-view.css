@@ -1,5 +1,5 @@
 /* ===================================
-   Detail View Page - 360° Room
+   Detail View Page - 360° Room - PERFORMANCE OPTIMIZED
    =================================== */
 .detail-view {
   position: fixed;
@@ -18,6 +18,7 @@
   cursor: grab;
   user-select: none;
   pointer-events: none;
+  will-change: opacity;
 }
 
 .detail-view:active {
@@ -112,16 +113,50 @@
   top: -5000px;
   width: 1600px;
   height: 8000px;
-  background: linear-gradient(to bottom,
-    rgba(5, 8, 15, 0.95) 0%,
-    rgba(3, 5, 10, 0.97) 50%,
-    rgba(2, 3, 8, 0.98) 100%);
-  border-left: 2px solid rgba(100, 200, 255, 0.2);
-  border-right: 2px solid rgba(100, 200, 255, 0.2);
+  background: 
+    /* Subtle radial lighting from center */
+    radial-gradient(ellipse 1200px 3000px at 50% 20%, 
+      rgba(30, 35, 55, 1) 0%,
+      rgba(15, 20, 35, 1) 40%,
+      rgba(8, 10, 18, 1) 100%
+    ),
+    /* Diagonal tile pattern */
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 2px,
+      transparent 2px,
+      transparent 100px,
+      rgba(255, 255, 255, 0.03) 100px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 2px,
+      transparent 2px,
+      transparent 100px,
+      rgba(255, 255, 255, 0.03) 100px
+    ),
+    /* Horizontal lines for depth */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 200px,
+      rgba(100, 150, 255, 0.1) 200px,
+      rgba(100, 150, 255, 0.1) 202px,
+      transparent 202px
+    );
+  border-left: 3px solid rgba(100, 200, 255, 0.4);
+  border-right: 3px solid rgba(100, 200, 255, 0.4);
   transform-style: preserve-3d;
   transform: rotateX(90deg) translateZ(-200px);
   pointer-events: none;
   z-index: -1;
+  box-shadow: 
+    inset 0 0 400px rgba(50, 80, 150, 0.15),
+    inset 0 0 800px rgba(20, 40, 80, 0.1),
+    0 -10px 50px rgba(0, 0, 0, 0.8);
+  filter: brightness(1.15) contrast(1.2);
 }
 
 .wall-box {
@@ -129,25 +164,25 @@
   width: 400px;
   height: 400px;
   background: transparent;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   padding: 0;
   transform-style: preserve-3d;
-  transition: all 0.4s ease;
+  transition: none;
   box-shadow: 
-    0 0 40px rgba(100, 200, 255, 0.6),
-    0 0 80px rgba(100, 200, 255, 0.4),
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    inset 0 0 30px rgba(255, 255, 255, 0.05),
-    inset 0 0 0 3px rgba(100, 200, 255, 0.6);
+    0 0 50px rgba(255, 255, 255, 0.8),
+    0 0 100px rgba(255, 255, 255, 0.6),
+    0 0 150px rgba(255, 255, 255, 0.4),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.7);
   transform-origin: center center;
   text-align: center;
   overflow: visible;
+  will-change: transform;
 }
 
-/* Orb shine effect for 3D appearance */
+/* Orb shine effect for 3D appearance - OPTIMIZED */
 .wall-box::before {
   content: '';
   position: absolute;
@@ -155,70 +190,103 @@
   left: 10%;
   width: 40%;
   height: 40%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
   border-radius: 50%;
-  opacity: 0.5;
+  opacity: 0.8;
   pointer-events: none;
-  filter: blur(20px);
+  filter: blur(15px);
+  will-change: opacity;
 }
 
-/* Add floor shadow beneath orbs for floating effect */
+/* Add floor shadow beneath orbs for floating effect - SOFT GLOW REFLECTION */
 .wall-box:not(.title-card)::after {
   content: '';
   position: absolute;
-  bottom: -250px;
+  bottom: -280px;
   left: 50%;
   transform: translateX(-50%) rotateX(90deg);
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+  width: 400px;
+  height: 400px;
+  background: 
+    radial-gradient(ellipse at center, 
+      rgba(255, 215, 0, 0.35) 0%, 
+      rgba(255, 215, 0, 0.25) 20%,
+      rgba(255, 215, 0, 0.15) 40%,
+      rgba(255, 215, 0, 0.08) 60%,
+      transparent 80%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
-  filter: blur(20px);
-  opacity: 0.6;
+  filter: blur(40px);
+  opacity: 0.8;
+  will-change: opacity;
+  animation: reflectionPulse 3s ease-in-out infinite;
 }
 
-/* Title card at entrance - rectangular card with same glowing style */
+@keyframes reflectionPulse {
+  0%, 100% { 
+    opacity: 0.7;
+  }
+  50% { 
+    opacity: 0.9;
+  }
+}
+
+/* Title card - NOW FLOATING TEXT ONLY - NO BACKGROUND */
 .wall-box.title-card {
-  width: 1000px;
-  height: 500px;
-  background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(100, 200, 255, 0.3) 40%, rgba(100, 150, 255, 0.2) 100%);
-  border: 4px solid rgba(100, 200, 255, 0.8);
-  border-radius: 20px;
-  box-shadow: 
-    0 0 60px rgba(100, 200, 255, 1),
-    0 0 120px rgba(100, 200, 255, 0.6),
-    0 30px 80px rgba(0, 0, 0, 0.6),
-    inset 0 0 80px rgba(255, 255, 255, 0.2);
-  padding: 0;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  overflow: visible;
+}
+
+/* Remove orb shine effect from title card */
+.wall-box.title-card::before {
+  display: none !important;
+}
+
+/* Main bubble above title card - HIDDEN */
+.wall-box.main-bubble {
+  display: none;
 }
 
 .wall-box.title-card h2 {
-  font-size: 6rem;
+  font-size: 14rem;
   font-weight: 900;
   color: var(--text-primary);
   text-align: center;
   text-shadow: 
-    0 0 15px rgba(100, 200, 255, 1),
-    0 0 30px rgba(100, 200, 255, 0.8),
-    0 0 45px rgba(100, 200, 255, 0.6);
+    0 0 20px rgba(100, 200, 255, 0.6),
+    0 0 40px rgba(100, 200, 255, 0.4),
+    0 8px 16px rgba(0, 0, 0, 0.5);
   margin: 0;
-  padding: 2rem;
-  animation: titleGlow 2s ease-in-out infinite alternate;
+  padding: 0;
+  animation: floatTitle 6s ease-in-out infinite;
+  letter-spacing: 1rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  will-change: transform;
+  /* Use GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Hallway Layout - Floating orbs arranged in a path through the hallway */
-/* Title card - at the END of hallway, centered and lowered a bit */
+/* Title text - CENTERED and EXTREMELY HIGH */
 .wall-box.box-7 {
-  left: -500px;
-  top: -550px;
-  transform: translateZ(-3200px);
+  left: 0;
+  top: -1200px;
+  transform: translateX(-50%) translateZ(-3200px);
 }
 
 /* Floating orbs arranged in pairs on left and right sides of hallway */
@@ -226,39 +294,39 @@
 /* First pair - close to entrance */
 .wall-box.box-1 {
   left: -200px;
-  top: -320px;
+  top: -400px;
   transform: translateX(-650px) translateZ(200px) rotateY(90deg);
 }
 
 .wall-box.box-2 {
   left: -200px;
-  top: -280px;
+  top: -400px;
   transform: translateX(650px) translateZ(200px) rotateY(-90deg);
 }
 
 /* Second pair - middle section */
 .wall-box.box-3 {
   left: -200px;
-  top: -290px;
+  top: -400px;
   transform: translateX(-650px) translateZ(-400px) rotateY(90deg);
 }
 
 .wall-box.box-4 {
   left: -200px;
-  top: -310px;
+  top: -400px;
   transform: translateX(650px) translateZ(-400px) rotateY(-90deg);
 }
 
 /* Third pair - deeper in hallway */
 .wall-box.box-5 {
   left: -200px;
-  top: -300px;
+  top: -400px;
   transform: translateX(-650px) translateZ(-1000px) rotateY(90deg);
 }
 
 .wall-box.box-6 {
   left: -200px;
-  top: -300px;
+  top: -400px;
   transform: translateX(650px) translateZ(-1000px) rotateY(-90deg);
 }
 
@@ -270,39 +338,39 @@
 /* Fourth pair - additional orbs */
 .wall-box.box-9 {
   left: -200px;
-  top: -295px;
+  top: -400px;
   transform: translateX(-650px) translateZ(-1600px) rotateY(90deg);
 }
 
 .wall-box.box-10 {
   left: -200px;
-  top: -305px;
+  top: -400px;
   transform: translateX(650px) translateZ(-1600px) rotateY(-90deg);
 }
 
 /* Fifth pair */
 .wall-box.box-11 {
   left: -200px;
-  top: -285px;
+  top: -400px;
   transform: translateX(-650px) translateZ(-2200px) rotateY(90deg);
 }
 
 .wall-box.box-12 {
   left: -200px;
-  top: -315px;
+  top: -400px;
   transform: translateX(650px) translateZ(-2200px) rotateY(-90deg);
 }
 
 /* Sixth pair - furthest from entrance */
 .wall-box.box-13 {
   left: -200px;
-  top: -290px;
+  top: -400px;
   transform: translateX(-650px) translateZ(-2800px) rotateY(90deg);
 }
 
 .wall-box.box-14 {
   left: -200px;
-  top: -310px;
+  top: -400px;
   transform: translateX(650px) translateZ(-2800px) rotateY(-90deg);
 }
 
@@ -328,18 +396,31 @@
   font-weight: 500;
 }
 
-@keyframes titleGlow {
-  from {
-    text-shadow: 
-      0 0 15px rgba(100, 200, 255, 1),
-      0 0 30px rgba(100, 200, 255, 0.8),
-      0 0 45px rgba(100, 200, 255, 0.6);
+/* Floating animation for title text - OPTIMIZED FOR PERFORMANCE */
+@keyframes floatTitle {
+  0%, 100% {
+    transform: translateY(0px) translateZ(0);
   }
-  to {
+  50% {
+    transform: translateY(-15px) translateZ(0);
+  }
+}
+
+/* Memory Hall title glow - More subtle */
+@keyframes memoryHallGlow {
+  0%, 100% {
     text-shadow: 
-      0 0 25px rgba(100, 200, 255, 1),
-      0 0 40px rgba(100, 200, 255, 0.9),
-      0 0 60px rgba(100, 200, 255, 0.7);
+      0 0 25px rgba(100, 200, 255, 0.75),
+      0 0 50px rgba(100, 200, 255, 0.5),
+      0 0 75px rgba(100, 200, 255, 0.3),
+      0 8px 16px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    text-shadow: 
+      0 0 35px rgba(100, 200, 255, 0.9),
+      0 0 70px rgba(100, 200, 255, 0.65),
+      0 0 105px rgba(100, 200, 255, 0.45),
+      0 8px 16px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -355,7 +436,7 @@
   }
 }
 
-.wall-box:not(.title-card) {
+.wall-box:not(.title-card):not(.main-bubble) {
   animation: floatOrb 4s ease-in-out infinite;
 }
 
@@ -371,19 +452,20 @@
 .wall-box.box-12 { animation-delay: 1.8s; }
 */
 
-/* Floating orb animation - using top property to preserve transform positioning */
+/* Floating orb animation - using top property to preserve transform positioning - SLOWER */
 @keyframes floatOrb {
   0%, 100% {
     top: -300px;
   }
   50% {
-    top: -320px;
+    top: -315px;
   }
 }
 
-/* Apply floating animation to orbs */
-.wall-box:not(.title-card) {
-  animation: floatOrb 4s ease-in-out infinite;
+/* Apply floating animation to orbs - SLOWER FOR PERFORMANCE */
+.wall-box:not(.title-card):not(.main-bubble) {
+  animation: floatOrb 6s ease-in-out infinite;
+  will-change: top;
 }
 
 /* Stagger animation delays for each orb */
@@ -408,9 +490,9 @@
   left: 10%;
   width: 40%;
   height: 40%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
   border-radius: 50%;
-  opacity: 0.5;
+  opacity: 0.8;
   pointer-events: none;
   filter: blur(20px);
 }
@@ -697,4 +779,203 @@
     min-height: 250px;
     padding: 2rem;
   }
+  
+  /* Smaller floating title on mobile */
+  .wall-box.title-card h2 {
+    font-size: 5rem;
+    letter-spacing: 0.4rem;
+  }
+  
+  /* Adjust title position on mobile - VERY HIGH */
+  .wall-box.box-7 {
+    top: -1000px;
+  }
+}
+
+/* ===================================
+   Exit Door - Glowing Portal
+   =================================== */
+.exit-door {
+  position: absolute;
+  left: 0;
+  top: -350px;
+  width: 300px;
+  height: 450px;
+  transform: translateX(-50%) translateZ(-3400px);
+  transform-style: preserve-3d;
+  cursor: pointer;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.door-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at center,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 1) 40%,
+      rgba(255, 255, 255, 0.98) 70%,
+      rgba(255, 255, 255, 0.95) 100%);
+  border: 4px solid rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.8);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 
+    0 0 40px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+    0 0 80px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.8),
+    0 0 120px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.6),
+    0 0 160px rgba(255, 255, 255, 0.9),
+    inset 0 0 60px rgba(255, 255, 255, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  animation: doorPulse 3s ease-in-out infinite;
+  filter: brightness(1.8);
+}
+
+.exit-door:hover .door-frame {
+  background: 
+    radial-gradient(ellipse at center,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(255, 255, 255, 1) 80%,
+      rgba(255, 255, 255, 0.98) 100%);
+  border-color: rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1);
+  box-shadow: 
+    0 0 50px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+    0 0 100px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+    0 0 150px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.8),
+    0 0 200px rgba(255, 255, 255, 1),
+    inset 0 0 80px rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  filter: brightness(2);
+}
+
+.door-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  height: 90%;
+  background: radial-gradient(ellipse at center,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0.3) 80%,
+    transparent 100%);
+  border-radius: 50%;
+  animation: glowPulse 2s ease-in-out infinite;
+  filter: blur(30px);
+}
+
+.door-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 
+    0 0 20px rgba(100, 200, 255, 1),
+    0 0 40px rgba(100, 200, 255, 0.8),
+    0 0 60px rgba(100, 200, 255, 0.6);
+  letter-spacing: 0.5rem;
+  z-index: 1;
+  animation: labelFloat 3s ease-in-out infinite;
+}
+
+@keyframes doorPulse {
+  0%, 100% {
+    border-color: rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.7);
+    box-shadow: 
+      0 0 40px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+      0 0 80px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.8),
+      0 0 120px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.6),
+      0 0 160px rgba(255, 255, 255, 0.8),
+      inset 0 0 60px rgba(255, 255, 255, 0.9);
+    filter: brightness(1.5);
+  }
+  50% {
+    border-color: rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1);
+    box-shadow: 
+      0 0 50px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+      0 0 100px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 1),
+      0 0 150px rgba(var(--door-color-r, 100), var(--door-color-g, 200), var(--door-color-b, 255), 0.8),
+      0 0 200px rgba(255, 255, 255, 1),
+      inset 0 0 80px rgba(255, 255, 255, 1);
+    filter: brightness(1.7);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes labelFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}
+
+/* Door reflection on floor */
+.exit-door::after {
+  content: '';
+  position: absolute;
+  bottom: -280px;
+  left: 50%;
+  transform: translateX(-50%) rotateX(90deg);
+  width: 350px;
+  height: 350px;
+  background: 
+    radial-gradient(ellipse at center, 
+      rgba(255, 255, 255, 0.3) 0%, 
+      rgba(255, 255, 255, 0.2) 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(40px);
+  opacity: 0.8;
+  animation: doorReflectionPulse 3s ease-in-out infinite;
+}
+
+@keyframes doorReflectionPulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* White fade transition overlay */
+.white-fade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+.white-fade-overlay.active {
+  opacity: 1;
+  visibility: visible;
 }

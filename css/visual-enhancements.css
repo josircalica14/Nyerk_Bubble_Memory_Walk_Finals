@@ -1,0 +1,205 @@
+/* ===================================
+   Visual Enhancements
+   Floating particles, fog, reflections, and animations
+   =================================== */
+
+/* ===================================
+   1. Floating Particles - Main Museum
+   =================================== */
+.particle-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(100, 200, 255, 1) 0%, rgba(100, 200, 255, 0.8) 30%, rgba(100, 200, 255, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Particle animations - MORE VISIBLE */
+@keyframes float1 { 0% { transform: translate(0, 100vh) scale(1); opacity: 0; } 10% { opacity: 0.9; } 90% { opacity: 0.9; } 100% { transform: translate(50px, -100vh) scale(0.5); opacity: 0; } }
+@keyframes float2 { 0% { transform: translate(0, 100vh) scale(0.8); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(-30px, -100vh) scale(1.2); opacity: 0; } }
+@keyframes float3 { 0% { transform: translate(0, 100vh) scale(1.1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(80px, -100vh) scale(0.6); opacity: 0; } }
+@keyframes float4 { 0% { transform: translate(0, 100vh) scale(0.9); opacity: 0; } 10% { opacity: 0.7; } 90% { opacity: 0.7; } 100% { transform: translate(-60px, -100vh) scale(1); opacity: 0; } }
+@keyframes float5 { 0% { transform: translate(0, 100vh) scale(1.2); opacity: 0; } 10% { opacity: 0.95; } 90% { opacity: 0.95; } 100% { transform: translate(20px, -100vh) scale(0.7); opacity: 0; } }
+
+/* ===================================
+   2. Ambient Fog - Main Museum
+   =================================== */
+.ambient-fog {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(to top, 
+    rgba(100, 150, 200, 0.15) 0%,
+    rgba(100, 150, 200, 0.08) 30%,
+    transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  animation: fogPulse 8s ease-in-out infinite;
+}
+
+@keyframes fogPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+}
+
+/* ===================================
+   3. Pulse Animation on Hover - Bubbles
+   =================================== */
+.bubble:hover .bubble-inner {
+  animation: bubblePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes bubblePulse {
+  0%, 100% {
+    box-shadow: 
+      0 8px 32px 0 rgba(31, 38, 135, 0.37),
+      inset 0 0 20px rgba(255, 255, 255, 0.1),
+      0 0 40px var(--bubble-color, rgba(100, 200, 255, 0.3));
+  }
+  50% {
+    box-shadow: 
+      0 8px 32px 0 rgba(31, 38, 135, 0.37),
+      inset 0 0 30px rgba(255, 255, 255, 0.2),
+      0 0 80px var(--bubble-color, rgba(100, 200, 255, 0.6)),
+      0 0 120px var(--bubble-color, rgba(100, 200, 255, 0.4));
+  }
+}
+
+/* ===================================
+   4. Floor Reflections - Memory Hall
+   Enhanced version of existing floor shadow
+   =================================== */
+/* This is handled by existing CSS in detail-view.css */
+/* We enhance it with animation via JavaScript-added class */
+
+.wall-box.enhanced-reflection::after {
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.2) 30%,
+    transparent 70%) !important;
+  opacity: 0.8 !important;
+  animation: reflectionPulse 3s ease-in-out infinite !important;
+}
+
+@keyframes reflectionPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+}
+
+/* ===================================
+   5. Orb Pedestals - Memory Hall
+   Replaces the h3 title with a pedestal display
+   =================================== */
+
+/* Hide the original h3 titles */
+.wall-box:not(.title-card) h3 {
+  display: none;
+}
+
+/* Pedestal - positioned where the h3 was */
+.orb-pedestal {
+  position: absolute;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 70px;
+  background: linear-gradient(to bottom,
+    rgba(255, 215, 0, 0.25) 0%,
+    rgba(255, 215, 0, 0.15) 50%,
+    rgba(255, 215, 0, 0.08) 100%);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.6),
+    inset 0 0 20px rgba(255, 215, 0, 0.2),
+    0 0 30px rgba(255, 215, 0, 0.3);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Pedestal top shine */
+.orb-pedestal::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 10%;
+  width: 80%;
+  height: 15px;
+  background: linear-gradient(to bottom,
+    rgba(255, 215, 0, 0.4) 0%,
+    transparent 100%);
+  border-radius: 50%;
+  filter: blur(8px);
+}
+
+/* Pedestal label - the title */
+.orb-pedestal::after {
+  content: attr(data-label);
+  position: relative;
+  color: rgba(255, 215, 0, 1);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 
+    0 0 10px rgba(255, 215, 0, 1),
+    0 0 20px rgba(255, 215, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  z-index: 1;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+}
+
+/* ===================================
+   Responsive Adjustments
+   =================================== */
+@media (max-width: 768px) {
+  .ambient-fog {
+    height: 30%;
+  }
+  
+  .orb-pedestal {
+    width: 150px;
+    height: 60px;
+    bottom: -220px;
+  }
+  
+  .wall-box:not(.title-card)::after {
+    width: 200px;
+    height: 200px;
+    bottom: -200px;
+  }
+}
+
+/* Performance optimization */
+@media (prefers-reduced-motion: reduce) {
+  .particle,
+  .ambient-fog,
+  .bubble:hover,
+  .wall-box:not(.title-card)::after {
+    animation: none;
+  }
+}

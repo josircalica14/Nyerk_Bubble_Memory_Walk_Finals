@@ -28,8 +28,8 @@ class DetailView {
     this.targetPosition = { x: 0, y: 0, z: 600 };
     this.moveSpeed = 8; // Faster movement for hallway
     
-    // Hallway boundaries - extended to accommodate new cards at -3000px
-    this.hallwayLength = 3200; // Length to furthest card at -3000px
+    // Hallway boundaries - extended to accommodate exit door at -3400px
+    this.hallwayLength = 3600; // Length to exit door at -3400px
     this.hallwayWidth = 700; // Width boundaries (left/right) - wider hallway to accommodate orbs at ±650px
     this.hallwayForwardLimit = 600; // Forward boundary (entrance)
     
@@ -58,6 +58,31 @@ class DetailView {
     
     // Set up event listeners
     this.backBtn.addEventListener('click', this.hide);
+    
+    // Add exit door click listener with white fade transition
+    const exitDoor = this.detailView.querySelector('.exit-door');
+    if (exitDoor) {
+      exitDoor.addEventListener('click', () => {
+        // Show white fade overlay
+        const whiteFade = document.querySelector('.white-fade-overlay');
+        if (whiteFade) {
+          whiteFade.classList.add('active');
+          
+          // Hide detail view after fade starts
+          setTimeout(() => {
+            this.hide();
+            
+            // Remove white fade after detail view is hidden
+            setTimeout(() => {
+              whiteFade.classList.remove('active');
+            }, 400);
+          }, 400);
+        } else {
+          // Fallback if overlay doesn't exist
+          this.hide();
+        }
+      });
+    }
     
     // Add click listeners to orbs
     this.setupOrbClickListeners();
@@ -126,8 +151,8 @@ class DetailView {
     // Reset to default starting position for all portfolios
     this.position = { x: 0, y: 0, z: 600 };
     this.targetPosition = { x: 0, y: 0, z: 600 };
-    // Reset to default hallway length (all 4 placeholder cards visible)
-    this.hallwayLength = 3200;
+    // Reset to default hallway length (extended for exit door)
+    this.hallwayLength = 3600;
     this.hallwayForwardLimit = 600;
     
     // Load images from portfolio folder
@@ -136,6 +161,9 @@ class DetailView {
     // Show detail view
     this.detailView.classList.add('active');
     this.detailView.setAttribute('aria-hidden', 'false');
+    
+    // Create floating orbs for detail view
+    this.createFloatingOrbs();
     
     // Set state
     this.isOpen = true;
@@ -181,7 +209,7 @@ class DetailView {
     const existingBg = this.detailView.querySelector('.detail-particle-background');
     if (existingBg) existingBg.remove();
     
-    // Create particle background container
+    // Create particle background container for shooting star images only
     const particleBg = document.createElement('div');
     particleBg.className = 'detail-particle-background';
     particleBg.style.cssText = `
@@ -194,62 +222,6 @@ class DetailView {
       z-index: 0;
       overflow: hidden;
     `;
-    
-    // Create small flying particles with bright yellow color for memory hall
-    const yellowStars = { r: 255, g: 255, b: 102 }; // Bright lemon yellow
-    
-    for (let i = 0; i < 50; i++) { // Increased to 50 particles
-      const particle = document.createElement('div');
-      const size = Math.random() * 10 + 6; // Slightly bigger: 6-16px
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      const duration = Math.random() * 15 + 10; // 10-25s animation
-      const delay = Math.random() * 5;
-      const opacity = Math.random() * 0.6 + 0.4; // Brighter: 0.4-1.0 opacity
-      
-      // Random movement pattern
-      const moveX = (Math.random() - 0.5) * 200; // -100 to 100px
-      const moveY = (Math.random() - 0.5) * 200;
-      
-      particle.style.cssText = `
-        position: absolute;
-        width: ${size}px;
-        height: ${size}px;
-        left: ${x}%;
-        top: ${y}%;
-        background: rgba(${yellowStars.r}, ${yellowStars.g}, ${yellowStars.b}, ${opacity});
-        border-radius: 50%;
-        box-shadow: 0 0 ${size * 3}px rgba(${yellowStars.r}, ${yellowStars.g}, ${yellowStars.b}, 0.8),
-                    0 0 ${size * 5}px rgba(${yellowStars.r}, ${yellowStars.g}, ${yellowStars.b}, 0.4);
-        animation: floatParticle${i} ${duration}s ease-in-out ${delay}s infinite;
-      `;
-      
-      particleBg.appendChild(particle);
-      
-      // Create unique animation for each particle
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes floatParticle${i} {
-          0%, 100% { 
-            transform: translate(0, 0) scale(1);
-            opacity: ${opacity};
-          }
-          25% { 
-            transform: translate(${moveX * 0.5}px, ${moveY * 0.3}px) scale(1.2);
-            opacity: ${opacity * 1.5};
-          }
-          50% { 
-            transform: translate(${moveX}px, ${moveY}px) scale(0.8);
-            opacity: ${opacity * 0.7};
-          }
-          75% { 
-            transform: translate(${moveX * 0.3}px, ${moveY * 0.7}px) scale(1.1);
-            opacity: ${opacity * 1.2};
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
     
     // Add flying PNG images from portfolio background folder with shooting star effect
     const folder = data.folder || data.id;
@@ -604,8 +576,22 @@ class DetailView {
       }
     }
     
+    // Apply accent color to main bubble (above title card)
+    const mainBubble = this.detailView.querySelector('.main-bubble');
+    if (mainBubble) {
+      mainBubble.style.setProperty('--main-bubble-color', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
+      mainBubble.style.setProperty('--main-bubble-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`);
+      
+      const mainBubbleImages = mainBubble.querySelector('.card-images');
+      if (mainBubbleImages) {
+        mainBubbleImages.style.setProperty('--vignette-color-r', rgb.r);
+        mainBubbleImages.style.setProperty('--vignette-color-g', rgb.g);
+        mainBubbleImages.style.setProperty('--vignette-color-b', rgb.b);
+      }
+    }
+    
     // Apply color theme to all cards
-    const cards = this.detailView.querySelectorAll('.wall-box:not(.title-card)');
+    const cards = this.detailView.querySelectorAll('.wall-box:not(.title-card):not(.main-bubble)');
     
     // Gold yellow color for all memory orbs
     const goldYellow = { r: 255, g: 215, b: 0 }; // Gold yellow RGB
@@ -666,6 +652,14 @@ class DetailView {
       this.backBtn.style.background = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`;
       this.backBtn.style.borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
     }
+    
+    // Update exit door with accent color border
+    const exitDoor = this.detailView.querySelector('.exit-door');
+    if (exitDoor) {
+      exitDoor.style.setProperty('--door-color-r', rgb.r);
+      exitDoor.style.setProperty('--door-color-g', rgb.g);
+      exitDoor.style.setProperty('--door-color-b', rgb.b);
+    }
   }
   
   /**
@@ -693,6 +687,27 @@ class DetailView {
       'placeholder5': 'placeholder5',
       'placeholder6': 'placeholder6'
     };
+    
+    // Load main bubble image (use the main portfolio image)
+    const mainBubble = this.detailView.querySelector('.main-bubble');
+    if (mainBubble && data.image) {
+      const mainBubbleContainer = mainBubble.querySelector('.card-images');
+      if (mainBubbleContainer) {
+        mainBubbleContainer.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = data.image;
+        img.alt = data.title;
+        img.loading = 'lazy';
+        console.log('Loading main bubble image:', data.image);
+        img.onload = function() {
+          console.log('✓ Main bubble image loaded successfully');
+        };
+        img.onerror = function() {
+          console.log('✗ Main bubble image failed to load');
+        };
+        mainBubbleContainer.appendChild(img);
+      }
+    }
     
     // Load images for each card
     Object.keys(cardFolders).forEach(cardName => {
@@ -838,6 +853,9 @@ class DetailView {
     // Remove particle background
     const particleBg = this.detailView.querySelector('.detail-particle-background');
     if (particleBg) particleBg.remove();
+    
+    // Remove floating orbs
+    this.removeFloatingOrbs();
     
     // Remove entrance arch
     const entranceArch = this.wallGrid.querySelector('.entrance-arch');
@@ -1061,6 +1079,118 @@ class DetailView {
     
     // Keep Y at 0 (no vertical movement)
     this.targetPosition.y = 0;
+  }
+  
+  /**
+   * Create floating orbs that move sideways in the detail view
+   */
+  createFloatingOrbs() {
+    // Remove existing orbs if any
+    this.removeFloatingOrbs();
+    
+    // Create orb container (same as main museum)
+    const orbContainer = document.createElement('div');
+    orbContainer.className = 'detail-floating-orbs';
+    orbContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    `;
+    
+    // Create 250 floating particles (increased for more density)
+    const particleCount = 250;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      
+      // Random size between 5-12px (increased from 3-8px)
+      const size = Math.random() * 7 + 5;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      
+      // Random vertical position
+      particle.style.top = `${Math.random() * 100}%`;
+      
+      // Start at left edge (off-screen)
+      particle.style.left = '-10%';
+      
+      // Random animation duration between 15-30 seconds
+      const duration = Math.random() * 15 + 15;
+      
+      // Stagger delays across the full duration so particles are spread out
+      const delay = -(Math.random() * duration); // Negative delay means animation already in progress
+      
+      // White color (same style as main museum particles)
+      particle.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 30%, rgba(255, 255, 255, 0) 70%)';
+      particle.style.borderRadius = '50%';
+      particle.style.position = 'absolute';
+      particle.style.pointerEvents = 'none';
+      particle.style.willChange = 'transform, opacity';
+      particle.style.boxShadow = '0 0 4px rgba(255, 255, 255, 0.8)';
+      
+      // Use one of 5 float animations (sideways version)
+      const animationIndex = (i % 5) + 1;
+      particle.style.animation = `floatSideways${animationIndex} ${duration}s linear ${delay}s infinite`;
+      
+      orbContainer.appendChild(particle);
+    }
+    
+    // Create sideways animation styles (adapted from main museum's upward animations)
+    const style = document.createElement('style');
+    style.className = 'detail-orb-animation';
+    style.textContent = `
+      @keyframes floatSideways1 { 
+        0% { transform: translate(-110vw, 0) scale(1); opacity: 0; } 
+        5% { opacity: 0.9; } 
+        95% { opacity: 0.9; } 
+        100% { transform: translate(110vw, 50px) scale(0.5); opacity: 0; } 
+      }
+      @keyframes floatSideways2 { 
+        0% { transform: translate(-110vw, 0) scale(0.8); opacity: 0; } 
+        5% { opacity: 0.8; } 
+        95% { opacity: 0.8; } 
+        100% { transform: translate(110vw, -30px) scale(1.2); opacity: 0; } 
+      }
+      @keyframes floatSideways3 { 
+        0% { transform: translate(-110vw, 0) scale(1.1); opacity: 0; } 
+        5% { opacity: 1; } 
+        95% { opacity: 1; } 
+        100% { transform: translate(110vw, 80px) scale(0.6); opacity: 0; } 
+      }
+      @keyframes floatSideways4 { 
+        0% { transform: translate(-110vw, 0) scale(0.9); opacity: 0; } 
+        5% { opacity: 0.7; } 
+        95% { opacity: 0.7; } 
+        100% { transform: translate(110vw, -60px) scale(1); opacity: 0; } 
+      }
+      @keyframes floatSideways5 { 
+        0% { transform: translate(-110vw, 0) scale(1.2); opacity: 0; } 
+        5% { opacity: 0.95; } 
+        95% { opacity: 0.95; } 
+        100% { transform: translate(110vw, 20px) scale(0.7); opacity: 0; } 
+      }
+    `;
+    document.head.appendChild(style);
+    
+    this.detailView.insertBefore(orbContainer, this.detailView.firstChild);
+  }
+  
+  /**
+   * Remove floating orbs from detail view
+   */
+  removeFloatingOrbs() {
+    const orbContainer = this.detailView.querySelector('.detail-floating-orbs');
+    if (orbContainer) {
+      orbContainer.remove();
+    }
+    
+    // Remove animation styles
+    const orbStyles = document.querySelectorAll('.detail-orb-animation');
+    orbStyles.forEach(style => style.remove());
   }
   
   /**
