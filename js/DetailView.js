@@ -165,6 +165,9 @@ class DetailView {
     // Create floating orbs for detail view
     this.createFloatingOrbs();
     
+    // Create glowing floor circles
+    this.createFloorCircles();
+    
     // Set state
     this.isOpen = true;
     
@@ -857,6 +860,9 @@ class DetailView {
     // Remove floating orbs
     this.removeFloatingOrbs();
     
+    // Remove floor circles
+    this.removeFloorCircles();
+    
     // Remove entrance arch
     const entranceArch = this.wallGrid.querySelector('.entrance-arch');
     if (entranceArch) entranceArch.remove();
@@ -1112,69 +1118,22 @@ class DetailView {
       particle.style.width = `${size}px`;
       particle.style.height = `${size}px`;
       
-      // Random vertical position
+      // Random position across the entire screen
+      particle.style.left = `${Math.random() * 100}%`;
       particle.style.top = `${Math.random() * 100}%`;
-      
-      // Start at left edge (off-screen)
-      particle.style.left = '-10%';
-      
-      // Random animation duration between 15-30 seconds
-      const duration = Math.random() * 15 + 15;
-      
-      // Stagger delays across the full duration so particles are spread out
-      const delay = -(Math.random() * duration); // Negative delay means animation already in progress
       
       // White color (same style as main museum particles)
       particle.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 30%, rgba(255, 255, 255, 0) 70%)';
       particle.style.borderRadius = '50%';
       particle.style.position = 'absolute';
       particle.style.pointerEvents = 'none';
-      particle.style.willChange = 'transform, opacity';
+      particle.style.opacity = '0.8';
       particle.style.boxShadow = '0 0 4px rgba(255, 255, 255, 0.8)';
       
-      // Use one of 5 float animations (sideways version)
-      const animationIndex = (i % 5) + 1;
-      particle.style.animation = `floatSideways${animationIndex} ${duration}s linear ${delay}s infinite`;
+      // No animation - particles stay in place
       
       orbContainer.appendChild(particle);
     }
-    
-    // Create sideways animation styles (adapted from main museum's upward animations)
-    const style = document.createElement('style');
-    style.className = 'detail-orb-animation';
-    style.textContent = `
-      @keyframes floatSideways1 { 
-        0% { transform: translate(-110vw, 0) scale(1); opacity: 0; } 
-        5% { opacity: 0.9; } 
-        95% { opacity: 0.9; } 
-        100% { transform: translate(110vw, 50px) scale(0.5); opacity: 0; } 
-      }
-      @keyframes floatSideways2 { 
-        0% { transform: translate(-110vw, 0) scale(0.8); opacity: 0; } 
-        5% { opacity: 0.8; } 
-        95% { opacity: 0.8; } 
-        100% { transform: translate(110vw, -30px) scale(1.2); opacity: 0; } 
-      }
-      @keyframes floatSideways3 { 
-        0% { transform: translate(-110vw, 0) scale(1.1); opacity: 0; } 
-        5% { opacity: 1; } 
-        95% { opacity: 1; } 
-        100% { transform: translate(110vw, 80px) scale(0.6); opacity: 0; } 
-      }
-      @keyframes floatSideways4 { 
-        0% { transform: translate(-110vw, 0) scale(0.9); opacity: 0; } 
-        5% { opacity: 0.7; } 
-        95% { opacity: 0.7; } 
-        100% { transform: translate(110vw, -60px) scale(1); opacity: 0; } 
-      }
-      @keyframes floatSideways5 { 
-        0% { transform: translate(-110vw, 0) scale(1.2); opacity: 0; } 
-        5% { opacity: 0.95; } 
-        95% { opacity: 0.95; } 
-        100% { transform: translate(110vw, 20px) scale(0.7); opacity: 0; } 
-      }
-    `;
-    document.head.appendChild(style);
     
     this.detailView.insertBefore(orbContainer, this.detailView.firstChild);
   }
@@ -1191,6 +1150,77 @@ class DetailView {
     // Remove animation styles
     const orbStyles = document.querySelectorAll('.detail-orb-animation');
     orbStyles.forEach(style => style.remove());
+  }
+  
+  /**
+   * Create 100 glowing circles on the floor
+   */
+  createFloorCircles() {
+    // Remove existing circles if any
+    this.removeFloorCircles();
+    
+    // Add circles as a style element for better performance
+    const style = document.createElement('style');
+    style.className = 'floor-circles-style';
+    
+    // Generate 100 circles with random positions, sizes, and colors
+    const colors = [
+      '255, 100, 200',  // Pink
+      '100, 150, 255',  // Blue
+      '255, 200, 100',  // Orange
+      '150, 100, 255',  // Purple
+      '100, 255, 200',  // Cyan
+      '255, 150, 100',  // Coral
+      '200, 100, 255',  // Violet
+      '100, 200, 255',  // Sky blue
+      '255, 255, 100',  // Yellow
+      '255, 100, 150',  // Rose
+      '150, 255, 100',  // Green
+      '255, 150, 200',  // Light pink
+      '100, 255, 255',  // Aqua
+      '255, 200, 150',  // Peach
+      '200, 150, 255',  // Lavender
+      '150, 255, 200',  // Mint
+      '255, 180, 100',  // Amber
+      '180, 100, 255',  // Deep purple
+      '100, 220, 255',  // Light blue
+      '255, 120, 180'   // Hot pink
+    ];
+    
+    let gradients = [];
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const size = Math.random() * 60 + 50; // 50-110px
+      const color = colors[i % colors.length];
+      const opacity = (Math.random() * 0.1 + 0.25).toFixed(2); // 0.25-0.35
+      
+      gradients.push(`radial-gradient(circle ${size}px at ${x}% ${y}%, rgba(${color}, ${opacity}) 0%, rgba(${color}, ${opacity * 0.7}) 40%, transparent 70%)`);
+    }
+    
+    style.textContent = `
+      .wall-grid::before {
+        background: 
+          ${gradients.join(',\n          ')},
+          linear-gradient(to bottom,
+            rgba(20, 15, 35, 1) 0%,
+            rgba(15, 10, 28, 1) 50%,
+            rgba(12, 8, 22, 1) 100%) !important;
+        filter: brightness(1.1) contrast(1.15) drop-shadow(0 0 15px rgba(255, 255, 255, 0.1)) !important;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+  
+  /**
+   * Remove floor circles
+   */
+  removeFloorCircles() {
+    const circleStyle = document.querySelector('.floor-circles-style');
+    if (circleStyle) {
+      circleStyle.remove();
+    }
   }
   
   /**

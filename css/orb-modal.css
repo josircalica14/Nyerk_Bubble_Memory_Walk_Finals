@@ -109,7 +109,7 @@
   overflow: visible;
 }
 
-/* Media container with adaptive orientation */
+/* Media container */
 .orb-modal-media {
   position: relative;
   max-width: 100%;
@@ -118,18 +118,6 @@
   align-items: center;
   justify-content: center;
   overflow: visible;
-}
-
-/* Landscape orientation (wider than tall) */
-.orb-modal-media.landscape {
-  width: auto;
-  height: auto;
-}
-
-/* Portrait orientation (taller than wide) */
-.orb-modal-media.portrait {
-  width: auto;
-  height: auto;
 }
 
 .orb-modal-media img,
@@ -144,51 +132,14 @@
   z-index: 1;
 }
 
-/* Vignette effect overlay - only for images */
-.orb-modal-media.has-image::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(ellipse at center,
-    transparent 0%,
-    transparent 30%,
-    rgba(255, 215, 0, 0.15) 50%,
-    rgba(255, 215, 0, 0.3) 70%,
-    rgba(255, 215, 0, 0.5) 85%,
-    rgba(255, 215, 0, 0.7) 100%);
-  pointer-events: none;
-  z-index: 2;
-  border-radius: 10px;
-}
-
-/* Additional inner vignette - only for images */
-.orb-modal-media.has-image::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(ellipse at center,
-    transparent 0%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.2) 70%,
-    rgba(0, 0, 0, 0.5) 100%);
-  pointer-events: none;
-  z-index: 2;
-  border-radius: 10px;
-}
-
-/* Video styling without vignette overlay */
-.orb-modal-media video {
-  filter: brightness(0.95) contrast(1.05);
-}
-
-/* Video-specific vignette wrapper */
+/* Vignette effect overlay - only for videos */
 .orb-modal-media.has-video::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: radial-gradient(ellipse at center,
     transparent 0%,
     transparent 25%,
@@ -196,14 +147,26 @@
     rgba(255, 215, 0, 0.35) 65%,
     rgba(255, 215, 0, 0.55) 80%,
     rgba(255, 215, 0, 0.75) 100%);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 10px;
 }
 
 .orb-modal-media.has-video::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: radial-gradient(ellipse at center,
     transparent 0%,
     transparent 35%,
     rgba(0, 0, 0, 0.25) 65%,
     rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 10px;
 }
 
 /* Navigation arrows for multiple images */
@@ -292,15 +255,5 @@
     width: 50px;
     height: 50px;
     font-size: 24px;
-  }
-  
-  .orb-modal-media.landscape {
-    max-width: 95vw;
-    max-height: 60vh;
-  }
-  
-  .orb-modal-media.portrait {
-    max-width: 80vw;
-    max-height: 75vh;
   }
 }

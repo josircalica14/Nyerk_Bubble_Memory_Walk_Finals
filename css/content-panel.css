@@ -253,25 +253,6 @@
 }
 
 /* ===================================
-   Content Tags (Optional)
-   =================================== */
-.content-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-lg);
-}
-
-.content-tag {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: rgba(100, 200, 255, 0.2);
-  border: 1px solid rgba(100, 200, 255, 0.3);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: var(--text-primary);
-}
-
-/* ===================================
    Scrollbar Styling
    =================================== */
 .content-panel::-webkit-scrollbar {

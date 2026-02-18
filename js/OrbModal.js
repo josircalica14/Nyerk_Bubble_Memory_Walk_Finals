@@ -170,16 +170,7 @@ class OrbModal {
         });
       }
       
-      // Detect orientation when media loads
-      if (mediaEl.tagName === 'IMG') {
-        mediaEl.onload = () => {
-          this.setOrientation(mediaEl);
-        };
-      } else if (mediaEl.tagName === 'VIDEO') {
-        mediaEl.onloadedmetadata = () => {
-          this.setOrientation(mediaEl);
-        };
-      }
+      // Detect orientation when media loads (removed for performance)
       
       this.mediaContainer.appendChild(mediaEl);
     }
@@ -190,21 +181,9 @@ class OrbModal {
   
   /**
    * Set adaptive orientation based on media dimensions
-   * @param {HTMLElement} mediaEl - Image or video element
    */
   setOrientation(mediaEl) {
-    const width = mediaEl.videoWidth || mediaEl.naturalWidth || mediaEl.width;
-    const height = mediaEl.videoHeight || mediaEl.naturalHeight || mediaEl.height;
-    
-    // Remove existing orientation classes
-    this.mediaContainer.classList.remove('landscape', 'portrait');
-    
-    // Add appropriate class based on aspect ratio
-    if (width > height) {
-      this.mediaContainer.classList.add('landscape');
-    } else {
-      this.mediaContainer.classList.add('portrait');
-    }
+    // Orientation detection removed for performance
   }
   
   /**

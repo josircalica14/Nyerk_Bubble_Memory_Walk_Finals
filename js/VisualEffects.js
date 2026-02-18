@@ -194,9 +194,6 @@ class VisualEffects {
     const orbs = document.querySelectorAll('.wall-box:not(.title-card)');
     
     orbs.forEach(orb => {
-      // Add enhanced reflection class
-      orb.classList.add('enhanced-reflection');
-      
       // Check if pedestal already exists
       if (orb.querySelector('.orb-pedestal')) return;
       

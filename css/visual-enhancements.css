@@ -80,30 +80,10 @@
   }
 }
 
-/* ===================================
-   4. Floor Reflections - Memory Hall
-   Enhanced version of existing floor shadow
-   =================================== */
-/* This is handled by existing CSS in detail-view.css */
-/* We enhance it with animation via JavaScript-added class */
-
-.wall-box.enhanced-reflection::after {
-  background: radial-gradient(circle, 
-    rgba(255, 255, 255, 0.4) 0%, 
-    rgba(255, 255, 255, 0.2) 30%,
-    transparent 70%) !important;
-  opacity: 0.8 !important;
-  animation: reflectionPulse 3s ease-in-out infinite !important;
-}
-
-@keyframes reflectionPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.9; }
-}
+/* Floor reflections handled in detail-view.css */
 
 /* ===================================
-   5. Orb Pedestals - Memory Hall
-   Replaces the h3 title with a pedestal display
+   Orb Pedestals - Memory Hall
    =================================== */
 
 /* Hide the original h3 titles */
