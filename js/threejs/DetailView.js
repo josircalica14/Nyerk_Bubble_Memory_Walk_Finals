@@ -126,41 +126,65 @@ export class DetailView {
   createTShapedFloor(accentColor) {
     this.accentColor = new THREE.Color(accentColor);
 
-    // Clear existing floor and edges
+    // Clear existing floor and edges with proper cleanup
     if (this.floor) {
       this.scene.remove(this.floor);
-      this.floor.geometry.dispose();
-      this.floor.material.dispose();
+      if (this.floor.geometry) this.floor.geometry.dispose();
+      if (this.floor.material) {
+        if (this.floor.material.map) this.floor.material.map.dispose();
+        this.floor.material.dispose();
+      }
+      this.floor = null;
     }
+    
+    // Clear floor pieces array if it exists
+    if (this.floorPieces) {
+      this.floorPieces.forEach(piece => {
+        this.scene.remove(piece);
+        if (piece.geometry) piece.geometry.dispose();
+        if (piece.material) {
+          if (piece.material.map) piece.material.map.dispose();
+          piece.material.dispose();
+        }
+      });
+      this.floorPieces = [];
+    }
+    
     this.edges.forEach(edge => {
       this.scene.remove(edge);
-      edge.geometry.dispose();
-      edge.material.dispose();
+      if (edge.geometry) edge.geometry.dispose();
+      if (edge.material) edge.material.dispose();
     });
     this.edges = [];
-
-    // Create T-shaped floor using overlapping planes for perfect coverage
-    const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8a4abe, // Bright vibrant purple
-      metalness: 1.0, // Maximum metalness for mirror effect
-      roughness: 0.02, // Very low roughness for glossy reflection
-      envMapIntensity: 3.0, // Strong environment reflections
-      side: THREE.DoubleSide
-    });
 
     // Dimensions
     const mainCorridorWidth = 16;
     const mainCorridorLength = 80;
-    const tBarWidth = 70; // Extended width (was 60)
+    const tBarWidth = 70;
     const tBarLength = 12;
-    const tBarExtension = 0; // No back extension needed
-    const entranceExtension = 35; // Extended floor behind spawn point (increased for Z=40 spawn)
+    const tBarExtension = 0;
+    const entranceExtension = 35;
     
-    const entranceBackZ = 10 + entranceExtension; // Back of entrance extension
-    const entranceZ = 10; // Original entrance position (where arc will be)
-    const junctionZ = -mainCorridorLength + 10; // T-junction position
-    const tBarBackZ = junctionZ - tBarLength; // Back edge of T-bar
-    const tBarExtendedBackZ = tBarBackZ - tBarExtension; // Extended back edge
+    const entranceBackZ = 10 + entranceExtension;
+    const entranceZ = 10;
+    const junctionZ = -mainCorridorLength + 10;
+    const tBarBackZ = junctionZ - tBarLength;
+
+    // Create nebula texture for floor
+    const nebulaTexture = this.createNebulaTexture();
+    
+    // Create T-shaped floor with nebula texture
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      map: nebulaTexture,
+      metalness: 0.3,
+      roughness: 0.4,
+      emissive: 0x4a2a6a,
+      emissiveIntensity: 0.3,
+      side: THREE.DoubleSide
+    });
+
+    // Initialize floor pieces array for cleanup
+    this.floorPieces = [];
 
     // Entrance extension floor - ONLY behind spawn point
     const entranceFloor = new THREE.Mesh(
@@ -171,6 +195,7 @@ export class DetailView {
     entranceFloor.position.set(0, 0.1, (entranceBackZ + entranceZ) / 2);
     entranceFloor.receiveShadow = true;
     this.scene.add(entranceFloor);
+    this.floorPieces.push(entranceFloor);
 
     // Main corridor floor - from entrance to junction
     const mainFloor = new THREE.Mesh(
@@ -181,8 +206,9 @@ export class DetailView {
     mainFloor.position.set(0, 0.1, (entranceZ + junctionZ) / 2);
     mainFloor.receiveShadow = true;
     this.scene.add(mainFloor);
+    this.floorPieces.push(mainFloor);
 
-    // T-bar floor - full width (extended to 70 units)
+    // T-bar floor - full width
     const tBarFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(tBarWidth, tBarLength),
       floorMaterial
@@ -191,11 +217,7 @@ export class DetailView {
     tBarFloor.position.set(0, 0.1, junctionZ - tBarLength / 2);
     tBarFloor.receiveShadow = true;
     this.scene.add(tBarFloor);
-
-    // Remove grid helper - we want clean reflective floor
-    // const gridHelper = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
-    // gridHelper.position.y = 0.01;
-    // this.scene.add(gridHelper);
+    this.floorPieces.push(tBarFloor);
 
     // Create glowing edges - ONLY ON OUTSIDE
     this.createGlowingEdges(mainCorridorWidth, mainCorridorLength, tBarWidth, tBarLength, entranceExtension, tBarExtension, entranceZ, junctionZ);
@@ -216,6 +238,112 @@ export class DetailView {
     const bubbleName = this.portfolioData?.title || 'Memory';
     const titleText = `${bubbleName}'s Memory Hall`;
     this.createFloatingTitle(titleText, 0, 25, junctionZ - tBarLength - 4 + 10, this.accentColor);
+  }
+
+  /**
+   * Create nebula/galaxy texture for floor - darker and seamless
+   */
+  createNebulaTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 2048;
+    const ctx = canvas.getContext('2d');
+    
+    // Even darker space background
+    ctx.fillStyle = '#010104';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create seamless nebula clouds with blue and purple - reduced opacity
+    const createNebulaCloud = (x, y, radius, color1, color2) => {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, color1);
+      gradient.addColorStop(0.5, color2);
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+    
+    // Add multiple nebula clouds - positioned for seamless tiling, darker
+    ctx.globalCompositeOperation = 'lighter';
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Center clouds - more vibrant colors
+    createNebulaCloud(centerX, centerY, 900, 'rgba(70, 110, 200, 0.22)', 'rgba(40, 75, 160, 0.12)');
+    createNebulaCloud(centerX - 300, centerY + 200, 700, 'rgba(130, 70, 200, 0.20)', 'rgba(90, 50, 150, 0.10)');
+    createNebulaCloud(centerX + 300, centerY - 200, 750, 'rgba(85, 120, 220, 0.19)', 'rgba(55, 85, 170, 0.10)');
+    
+    // Edge clouds for seamless tiling - more color
+    createNebulaCloud(0, 0, 600, 'rgba(80, 95, 190, 0.17)', 'rgba(50, 65, 140, 0.08)');
+    createNebulaCloud(canvas.width, 0, 600, 'rgba(80, 95, 190, 0.17)', 'rgba(50, 65, 140, 0.08)');
+    createNebulaCloud(0, canvas.height, 600, 'rgba(80, 95, 190, 0.17)', 'rgba(50, 65, 140, 0.08)');
+    createNebulaCloud(canvas.width, canvas.height, 600, 'rgba(80, 95, 190, 0.17)', 'rgba(50, 65, 140, 0.08)');
+    
+    // Purple accents - more vibrant
+    createNebulaCloud(centerX + 400, centerY + 300, 650, 'rgba(140, 80, 210, 0.19)', 'rgba(95, 50, 160, 0.09)');
+    createNebulaCloud(centerX - 400, centerY - 300, 680, 'rgba(125, 70, 200, 0.18)', 'rgba(85, 45, 150, 0.08)');
+    
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Add fewer, dimmer stars for darker look
+    const addStars = (count, minSize, maxSize, opacity) => {
+      for (let i = 0; i < count; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = minSize + Math.random() * (maxSize - minSize);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fill();
+        
+        // Add glow to fewer stars
+        if (Math.random() > 0.85) {
+          const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, size * 2.5);
+          glowGradient.addColorStop(0, `rgba(255, 255, 255, ${opacity * 0.4})`);
+          glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = glowGradient;
+          ctx.beginPath();
+          ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    };
+    
+    // Fewer, dimmer stars
+    addStars(200, 0.4, 1.2, 0.5); // Small dim stars
+    addStars(80, 1.0, 2.0, 0.6); // Medium stars
+    addStars(30, 1.5, 2.5, 0.7); // Larger stars
+    
+    // Add fewer sparkle stars
+    for (let i = 0; i < 15; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = 1.5 + Math.random() * 2;
+      
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + Math.random() * 0.2})`;
+      ctx.lineWidth = 0.8;
+      
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(x - size * 1.5, y);
+      ctx.lineTo(x + size * 1.5, y);
+      ctx.stroke();
+      
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(x, y - size * 1.5);
+      ctx.lineTo(x, y + size * 1.5);
+      ctx.stroke();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 1); // No repeat for seamless look
+    
+    return texture;
   }
 
   /**
@@ -487,13 +615,13 @@ export class DetailView {
         
         ctx.restore();
         
-        // Add light color overlay
+        // Add light color overlay - increased opacity for more noticeable color
         ctx.save();
         ctx.beginPath();
         ctx.arc(256, 256, 256, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.15)`;
+        ctx.fillStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.35)`;
         ctx.fillRect(0, 0, 512, 512);
         ctx.restore();
         
@@ -527,6 +655,21 @@ export class DetailView {
         ctx.clip();
         ctx.fillStyle = highlight;
         ctx.fillRect(0, 0, 512, 512);
+        ctx.restore();
+        
+        // Add inner border - darker gold for visible outline inside the circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(256, 256, 256, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        
+        // Draw inner border by stroking a slightly smaller circle
+        ctx.beginPath();
+        ctx.arc(256, 256, 251, 0, Math.PI * 2); // Smaller radius for inner border
+        ctx.strokeStyle = 'rgba(243, 195, 4, 1)'; // Brighter gold yellow, fully opaque
+        ctx.lineWidth = 10; // Thicker to ensure visibility inside
+        ctx.stroke();
         ctx.restore();
         
         texture.needsUpdate = true;
@@ -624,16 +767,19 @@ export class DetailView {
         blending: THREE.NormalBlending
       });
       // Outer glow ring (also sprite) - ADD FIRST so it renders behind
+      // Create soft, smooth glow like main museum bubbles - MORE NOTICEABLE
       const glowCanvas = document.createElement('canvas');
       glowCanvas.width = 512;
       glowCanvas.height = 512;
       const glowCtx = glowCanvas.getContext('2d');
       
-      // Draw glow extending from center to full canvas edge
-      const glowGradient = glowCtx.createRadialGradient(256, 256, 200, 256, 256, 256);
-      glowGradient.addColorStop(0, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.6)`);
-      glowGradient.addColorStop(0.4, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.4)`);
-      glowGradient.addColorStop(0.7, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.2)`);
+      // Draw smooth, soft glow extending from center - stronger and more visible
+      const glowGradient = glowCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
+      glowGradient.addColorStop(0, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.9)`);
+      glowGradient.addColorStop(0.25, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.7)`);
+      glowGradient.addColorStop(0.45, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.5)`);
+      glowGradient.addColorStop(0.65, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.3)`);
+      glowGradient.addColorStop(0.8, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.15)`);
       glowGradient.addColorStop(1, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0)`);
       glowCtx.fillStyle = glowGradient;
       glowCtx.fillRect(0, 0, 512, 512);
@@ -644,10 +790,11 @@ export class DetailView {
           map: glowTexture,
           transparent: true,
           blending: THREE.AdditiveBlending,
-          depthTest: false // Render behind main orb
+          depthTest: false, // Render behind main orb
+          opacity: 1.0 // Full opacity for more noticeable glow
         })
       );
-      glowRing.scale.set(orbRadius * 2.8, orbRadius * 2.8, 1);
+      glowRing.scale.set(orbRadius * 3.0, orbRadius * 3.0, 1); // Reduced radius for tighter glow
       glowRing.position.set(x, y, z - 0.01); // Slightly behind
       glowRing.renderOrder = -1; // Render first
       this.scene.add(glowRing);
@@ -696,7 +843,7 @@ export class DetailView {
     };
 
     // Main corridor - Left wall (Orbs 1, 3, 5, 7, 9, 11) - equal spacing throughout
-    const leftX = -mainHalfWidth - 4.5; // Moved further from wall
+    const leftX = -mainHalfWidth - 4.5; // Same distance as right wall
     createOrb(leftX, orbHeight, 2, Math.PI / 2);    // Orb 1 (start)
     createOrb(leftX, orbHeight, -10, Math.PI / 2);  // Orb 3 (12 units)
     createOrb(leftX, orbHeight, -22, Math.PI / 2);  // Orb 5 (12 units)
@@ -720,10 +867,10 @@ export class DetailView {
     const tBarBackWallZ = tBarBackZ - 4.5;    // Moved further from wall
     const tBarMiddleZ = (junctionZ + tBarBackZ) / 2;  // -76 (middle of T-bar)
 
-    // LEFT INNER CORNER (Orbs 13, 14, 15)
-    createOrb(-11.5, orbHeight, -68, Math.PI / 2);  // Orb 13 - keep facing side wall
-    createOrb(-22, orbHeight, -68, Math.PI);        // Orb 14 - face toward back wall
-    createOrb(-30, orbHeight, -68, Math.PI);        // Orb 15 - face toward back wall
+    // LEFT INNER CORNER (Orbs 13, 14, 15) - moved inward for spacing
+    createOrb(leftX, orbHeight, -65, Math.PI / 2);  // Orb 13 - aligned with left wall orbs, more space from corner
+    createOrb(-22, orbHeight, -65, Math.PI);        // Orb 14 - face toward back wall
+    createOrb(-30, orbHeight, -65, Math.PI);        // Orb 15 - face toward back wall
 
     // LEFT SIDE WALL END (Orb 16) - revert to side facing
     createOrb(tBarLeftX, orbHeight, tBarMiddleZ, Math.PI / 2);   // Orb 16 - face side wall
@@ -737,10 +884,10 @@ export class DetailView {
     createOrb(18, orbHeight, tBarBackWallZ, 0);    // Orb 21 - face forward
     createOrb(30, orbHeight, tBarBackWallZ, 0);    // Orb 22 - face forward
 
-    // RIGHT INNER CORNER (Orbs 23, 24, 25)
-    createOrb(11.5, orbHeight, -68, -Math.PI / 2);  // Orb 23 - keep facing side wall
-    createOrb(22, orbHeight, -68, Math.PI);         // Orb 24 - face toward back wall
-    createOrb(30, orbHeight, -68, Math.PI);         // Orb 25 - face toward back wall
+    // RIGHT INNER CORNER (Orbs 23, 24, 25) - moved inward for spacing
+    createOrb(rightX, orbHeight, -65, -Math.PI / 2);  // Orb 23 - aligned with right wall orbs, more space from corner
+    createOrb(22, orbHeight, -65, Math.PI);         // Orb 24 - face toward back wall
+    createOrb(30, orbHeight, -65, Math.PI);         // Orb 25 - face toward back wall
 
     // RIGHT SIDE WALL END (Orb 26) - revert to side facing
     createOrb(tBarRightX, orbHeight, tBarMiddleZ, -Math.PI / 2);  // Orb 26 - face side wall
@@ -1154,6 +1301,113 @@ export class DetailView {
     const stars = new THREE.Points(starGeometry, starMaterial);
     this.scene.add(stars);
     this.stars = stars;
+    
+    // Store twinkle data for animation
+    this.starTwinkleData = [];
+    for (let i = 0; i < starCount; i++) {
+      this.starTwinkleData.push({
+        baseOpacity: 0.5 + Math.random() * 0.5,
+        twinkleSpeed: 0.5 + Math.random() * 2,
+        twinkleOffset: Math.random() * Math.PI * 2
+      });
+    }
+    
+    // Add glowing half moon
+    this.createMoon();
+  }
+
+  /**
+   * Create glowing half moon in the sky
+   */
+  createMoon() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas with transparency
+    ctx.clearRect(0, 0, 512, 512);
+    
+    const centerX = 256;
+    const centerY = 256;
+    const radius = 160;
+    
+    // Draw soft glow using radial gradient that follows crescent shape
+    ctx.save();
+    
+    // Create multiple soft glow layers with smooth gradients
+    const glowLayers = [
+      { radius: radius + 80, alpha: 0.08 },
+      { radius: radius + 60, alpha: 0.12 },
+      { radius: radius + 40, alpha: 0.16 },
+      { radius: radius + 20, alpha: 0.20 }
+    ];
+    
+    glowLayers.forEach(layer => {
+      // Draw glow circle
+      const glowGradient = ctx.createRadialGradient(centerX, centerY, radius, centerX, centerY, layer.radius);
+      glowGradient.addColorStop(0, `rgba(255, 250, 220, ${layer.alpha})`);
+      glowGradient.addColorStop(1, 'rgba(255, 250, 220, 0)');
+      
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, layer.radius, 0, Math.PI * 2);
+      ctx.fillStyle = glowGradient;
+      ctx.fill();
+      
+      // Cut out shadow side with soft edge
+      const shadowGradient = ctx.createRadialGradient(centerX + 90, centerY, radius - 20, centerX + 90, centerY, layer.radius);
+      shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+      shadowGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.8)');
+      shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(centerX + 90, centerY, layer.radius, 0, Math.PI * 2);
+      ctx.fillStyle = shadowGradient;
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    });
+    
+    // Draw the main moon crescent with smooth edges
+    const moonGradient = ctx.createRadialGradient(centerX - 40, centerY - 40, 0, centerX, centerY, radius);
+    moonGradient.addColorStop(0, 'rgba(255, 255, 250, 1)');
+    moonGradient.addColorStop(0.5, 'rgba(245, 245, 240, 1)');
+    moonGradient.addColorStop(0.8, 'rgba(230, 230, 225, 1)');
+    moonGradient.addColorStop(1, 'rgba(220, 220, 215, 0.95)');
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = moonGradient;
+    ctx.fill();
+    
+    // Cut out shadow with soft gradient edge for natural look
+    const shadowGradient = ctx.createRadialGradient(centerX + 90, centerY, radius - 30, centerX + 90, centerY, radius + 10);
+    shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+    shadowGradient.addColorStop(0.8, 'rgba(0, 0, 0, 1)');
+    shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(centerX + 90, centerY, radius + 10, 0, Math.PI * 2);
+    ctx.fillStyle = shadowGradient;
+    ctx.fill();
+    
+    ctx.restore();
+    
+    const moonTexture = new THREE.CanvasTexture(canvas);
+    const moonMaterial = new THREE.SpriteMaterial({
+      map: moonTexture,
+      transparent: true,
+      blending: THREE.NormalBlending,
+      depthTest: false
+    });
+    
+    const moon = new THREE.Sprite(moonMaterial);
+    moon.scale.set(35, 35, 1);
+    moon.position.set(-80, 80, -150); // Raised higher in the sky
+    this.scene.add(moon);
+    
+    this.moon = moon;
   }
 
   /**
@@ -2921,6 +3175,21 @@ export class DetailView {
       }
     }
 
+    // Animate twinkling stars - more noticeable
+    if (this.stars && this.starTwinkleData) {
+      const colors = this.stars.geometry.attributes.color.array;
+      this.starTwinkleData.forEach((data, i) => {
+        // Larger variation: from 0.2 to 1.2 (60% variation instead of 30%)
+        const twinkle = Math.sin(this.time * data.twinkleSpeed + data.twinkleOffset) * 0.5 + 0.7;
+        const brightness = data.baseOpacity * twinkle;
+        const i3 = i * 3;
+        colors[i3] = brightness;
+        colors[i3 + 1] = brightness;
+        colors[i3 + 2] = brightness;
+      });
+      this.stars.geometry.attributes.color.needsUpdate = true;
+    }
+
     // Animate arc particles
     if (this.arcParticles) {
       this.arcParticles.particles.forEach(particle => {
@@ -3000,12 +3269,204 @@ export class DetailView {
   dispose() {
     this.hide();
     
+    // Stop animation loop
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    // Cleanup orbs
+    if (this.orbs) {
+      this.orbs.forEach(orb => {
+        this.scene.remove(orb.mesh);
+        if (orb.glowRing) this.scene.remove(orb.glowRing);
+        if (orb.light) this.scene.remove(orb.light);
+        if (orb.platform) this.scene.remove(orb.platform);
+        if (orb.textSprite) this.scene.remove(orb.textSprite);
+        
+        // Stop video
+        if (orb.videoElement) {
+          orb.videoElement.pause();
+          orb.videoElement.src = '';
+          orb.videoElement.load();
+        }
+        
+        // Dispose resources
+        if (orb.mesh.geometry) orb.mesh.geometry.dispose();
+        if (orb.mesh.material) orb.mesh.material.dispose();
+        if (orb.texture) orb.texture.dispose();
+        
+        if (orb.glowRing) {
+          if (orb.glowRing.geometry) orb.glowRing.geometry.dispose();
+          if (orb.glowRing.material) orb.glowRing.material.dispose();
+        }
+        
+        if (orb.platform) {
+          orb.platform.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (child.material.map) child.material.map.dispose();
+              child.material.dispose();
+            }
+          });
+        }
+        
+        if (orb.textSprite) {
+          if (orb.textSprite.geometry) orb.textSprite.geometry.dispose();
+          if (orb.textSprite.material) {
+            if (orb.textSprite.material.map) orb.textSprite.material.map.dispose();
+            orb.textSprite.material.dispose();
+          }
+        }
+      });
+      this.orbs = [];
+    }
+    
+    // Cleanup title sprite
+    if (this.titleSprite) {
+      if (this.titleSprite.sprite) {
+        this.scene.remove(this.titleSprite.sprite);
+        
+        if (this.titleSprite.sprite.children) {
+          this.titleSprite.sprite.children.forEach(child => {
+            if (child.material) {
+              child.material.dispose();
+              if (child.material.map) child.material.map.dispose();
+            }
+            if (child.geometry) child.geometry.dispose();
+          });
+        }
+        
+        if (this.titleSprite.sprite.material) {
+          this.titleSprite.sprite.material.dispose();
+          if (this.titleSprite.sprite.material.map) {
+            this.titleSprite.sprite.material.map.dispose();
+          }
+        }
+        if (this.titleSprite.sprite.geometry) {
+          this.titleSprite.sprite.geometry.dispose();
+        }
+      }
+      
+      if (this.titleSprite.light) this.scene.remove(this.titleSprite.light);
+      if (this.titleSprite.rimLights) {
+        this.titleSprite.rimLights.forEach(light => this.scene.remove(light));
+      }
+      
+      this.titleSprite = null;
+    }
+    
+    // Cleanup arc particles
+    if (this.arcParticles) {
+      this.arcParticles.particles.forEach(particle => {
+        this.scene.remove(particle.sprite);
+        if (particle.sprite.material) {
+          particle.sprite.material.dispose();
+          if (particle.sprite.material.map) particle.sprite.material.map.dispose();
+        }
+      });
+      this.arcParticles = null;
+    }
+    
+    // Cleanup door particles
+    if (this.doorParticles) {
+      this.doorParticles.particles.forEach(particle => {
+        this.scene.remove(particle.sprite);
+        if (particle.sprite.material) {
+          particle.sprite.material.dispose();
+          if (particle.sprite.material.map) particle.sprite.material.map.dispose();
+        }
+      });
+      this.doorParticles = null;
+    }
+    
+    // Cleanup stars
+    if (this.stars) {
+      this.scene.remove(this.stars);
+      if (this.stars.geometry) this.stars.geometry.dispose();
+      if (this.stars.material) this.stars.material.dispose();
+      this.stars = null;
+    }
+    
+    // Cleanup moon
+    if (this.moon) {
+      this.scene.remove(this.moon);
+      if (this.moon.material) {
+        if (this.moon.material.map) this.moon.material.map.dispose();
+        this.moon.material.dispose();
+      }
+      this.moon = null;
+    }
+    
+    // Cleanup floor pieces
+    if (this.floorPieces) {
+      this.floorPieces.forEach(piece => {
+        this.scene.remove(piece);
+        if (piece.geometry) piece.geometry.dispose();
+        if (piece.material) {
+          if (piece.material.map) piece.material.map.dispose();
+          piece.material.dispose();
+        }
+      });
+      this.floorPieces = [];
+    }
+    
+    // Cleanup single floor if exists
+    if (this.floor) {
+      this.scene.remove(this.floor);
+      if (this.floor.geometry) this.floor.geometry.dispose();
+      if (this.floor.material) {
+        if (this.floor.material.map) this.floor.material.map.dispose();
+        this.floor.material.dispose();
+      }
+      this.floor = null;
+    }
+    
+    // Cleanup edges
+    if (this.edges) {
+      this.edges.forEach(edge => {
+        this.scene.remove(edge);
+        if (edge.geometry) edge.geometry.dispose();
+        if (edge.material) edge.material.dispose();
+      });
+      this.edges = [];
+    }
+    
+    // Cleanup all lights in scene
+    const lightsToRemove = [];
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Light) {
+        lightsToRemove.push(object);
+      }
+    });
+    lightsToRemove.forEach(light => this.scene.remove(light));
+    
+    // Remove event listeners
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('mousedown', this.onMouseDown);
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
+    
+    // Dispose renderer
     if (this.renderer) {
       this.renderer.dispose();
+      this.renderer = null;
     }
-
+    
+    // Remove container
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
+      this.container = null;
     }
+    
+    // Clear scene
+    if (this.scene) {
+      this.scene.clear();
+      this.scene = null;
+    }
+    
+    this.camera = null;
+    this.isActive = false;
   }
 }
