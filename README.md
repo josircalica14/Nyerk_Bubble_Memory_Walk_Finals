@@ -22,10 +22,17 @@ Tech:
 
 Screnshots:
 
-<img width="1919" height="945" alt="Screenshot_4" src="https://github.com/user-attachments/assets/b734c0ca-1bd0-4183-967f-23a1b86026aa" />
-<img width="1919" height="941" alt="Screenshot_5" src="https://github.com/user-attachments/assets/d2317e97-b6e6-4de2-86d2-a700287cbc03" />
-<img width="1919" height="945" alt="Screenshot_6" src="https://github.com/user-attachments/assets/b7d7b341-b551-4a8a-a836-443c6ea7bbea" />
-<img width="1919" height="944" alt="Screenshot_7" src="https://github.com/user-attachments/assets/77ed0686-e800-4f67-b342-e66313e0a743" />
+
+
+
+<img width="1919" height="945" alt="Screenshot_9" src="https://github.com/user-attachments/assets/fb6c6502-91fd-4ffd-9501-223e62e27844" />
+<img width="1919" height="943" alt="Screenshot_10" src="https://github.com/user-attachments/assets/7010d29f-cbd4-422d-8f6b-b0d142c84fb2" />
+<img width="1919" height="939" alt="Screenshot_11" src="https://github.com/user-attachments/assets/213d4918-1f9f-41c7-9fd2-1e395cb7196e" />
+<img width="1919" height="948" alt="Screenshot_12" src="https://github.com/user-attachments/assets/c574523d-1dc0-44c6-b0b4-30504d9ded98" />
+<img width="1919" height="946" alt="Screenshot_13" src="https://github.com/user-attachments/assets/5bab178f-23bd-43e8-afcd-17e25ad893b6" />
+<img width="1919" height="949" alt="Screenshot_14" src="https://github.com/user-attachments/assets/7b466c9b-8556-45b4-85e4-fd84b4f15a0f" />
+
+
 
 
 
