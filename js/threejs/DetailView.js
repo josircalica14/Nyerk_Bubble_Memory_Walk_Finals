@@ -524,9 +524,9 @@ export class DetailView {
     const orbRadius = 2.5; // Medium size
     const orbHeight = 4.5; // Raised higher
 
-    // Gold yellow color for all orbs
+    // Amber yellow color for all orbs
     const colors = [
-      { hex: 0xFFD700, rgb: [255, 215, 0] } // Gold yellow
+      { hex: 0xF79C00, rgb: [247, 156, 0] } // Amber yellow
     ];
 
     const mainHalfWidth = mainWidth / 2;
@@ -667,7 +667,7 @@ export class DetailView {
         // Draw inner border by stroking a slightly smaller circle
         ctx.beginPath();
         ctx.arc(256, 256, 251, 0, Math.PI * 2); // Smaller radius for inner border
-        ctx.strokeStyle = 'rgba(243, 195, 4, 1)'; // Brighter gold yellow, fully opaque
+        ctx.strokeStyle = 'rgba(247, 140, 0, 1)'; // Amber yellow, fully opaque
         ctx.lineWidth = 10; // Thicker to ensure visibility inside
         ctx.stroke();
         ctx.restore();
@@ -3086,14 +3086,14 @@ export class DetailView {
         ctx.drawImage(orb.videoElement, drawX, drawY, drawWidth, drawHeight);
         ctx.restore();
         
-        // Apply effects (overlay, vignette, highlight)
-        const colorData = { rgb: [255, 215, 0] }; // Gold yellow
+        // Apply effects (overlay, vignette, highlight) - use orb's actual color
+        const colorData = { rgb: [247, 156, 0] }; // Amber yellow matching orb color
         ctx.save();
         ctx.beginPath();
         ctx.arc(256, 256, 256, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.15)`;
+        ctx.fillStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.35)`;
         ctx.fillRect(0, 0, 512, 512);
         ctx.restore();
         
