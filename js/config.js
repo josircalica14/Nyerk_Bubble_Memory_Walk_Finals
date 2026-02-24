@@ -55,7 +55,8 @@ const portfolioData = [
       placeholder17: "Memory 17",
       placeholder18: "Memory 18",
       placeholder19: "Memory 19",
-      placeholder20: "Memory 20"
+      placeholder20: "Memory 20",
+      placeholder21: "Memory 21"
     }
   },
   {
@@ -91,7 +92,8 @@ const portfolioData = [
       placeholder17: "Memory 17",
       placeholder18: "Memory 18",
       placeholder19: "Memory 19",
-      placeholder20: "Memory 20"
+      placeholder20: "Memory 20",
+      placeholder21: "Memory 21"
     }
   },
   {
@@ -102,17 +104,17 @@ const portfolioData = [
     color: "#90E24A",
     folder: "jnnzth",
     cardTitles: {
-      overview: "Overview",
-      gallery: "Gallery",
-      technologies: "Technologies",
-      details: "Details",
-      links: "Links",
-      contact: "Contact",
-      placeholder1: "Placeholder 1",
-      placeholder2: "Placeholder 2",
-      placeholder3: "Placeholder 3",
-      placeholder4: "Placeholder 4",
-      placeholder5: "Placeholder 5",
+      overview: "Baby Janin",
+      gallery: "OJT pic 1",
+      technologies: "OJT Pic 2",
+      details: "With Classmates",
+      links: "With Cousins",
+      contact: "My Life",
+      placeholder1: "Fav pic with Lola",
+      placeholder2: "OJT pic 3",
+      placeholder3: "With Pookielay",
+      placeholder4: "With Mom",
+      placeholder5: "Work Friends",
       placeholder6: "Placeholder 6",
       placeholder7: "Placeholder 7",
       placeholder8: "Placeholder 8",
@@ -127,7 +129,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -163,7 +166,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -174,18 +178,18 @@ const portfolioData = [
     color: "#FFD700",
     folder: "beyl",
     cardTitles: {
-      overview: "Overview",
-      gallery: "Gallery",
-      technologies: "Technologies",
-      details: "Details",
-      links: "Links",
-      contact: "Contact",
-      placeholder1: "Placeholder 1",
-      placeholder2: "Placeholder 2",
-      placeholder3: "Placeholder 3",
-      placeholder4: "Placeholder 4",
-      placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6",
+      overview: "Bebi Beyl",
+      gallery: "Swimming Vid",
+      technologies: "OJT 1",
+      details: "DevCon Trip",
+      links: "OJT Preperation",
+      contact: "OJT 2",
+      placeholder1: "Swimming Pic 1",
+      placeholder2: "Gala",
+      placeholder3: "Grad Pictorial",
+      placeholder4: "Tawa",
+      placeholder5: "Swim Pic 2",
+      placeholder6: "Capstone",
       placeholder7: "Placeholder 7",
       placeholder8: "Placeholder 8",
       placeholder9: "Placeholder 9",
@@ -199,7 +203,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -235,7 +240,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -271,7 +277,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -307,7 +314,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -343,7 +351,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -379,7 +388,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -415,7 +425,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -451,7 +462,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -473,7 +485,22 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   },
   {
@@ -509,7 +536,8 @@ const portfolioData = [
       placeholder17: "Placeholder 17",
       placeholder18: "Placeholder 18",
       placeholder19: "Placeholder 19",
-      placeholder20: "Placeholder 20"
+      placeholder20: "Placeholder 20",
+      placeholder21: "Placeholder 21"
     }
   }
 ];
