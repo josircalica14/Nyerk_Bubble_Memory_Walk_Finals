@@ -124,7 +124,10 @@ export class DetailView {
    * Create T-shaped floor with glowing edges
    */
   createTShapedFloor(accentColor) {
-    this.accentColor = new THREE.Color(accentColor);
+    // Store original accent color for title
+    this.originalAccentColor = new THREE.Color(accentColor);
+    // Use amber yellow for floor elements (edges and arc)
+    this.accentColor = new THREE.Color(0xA66300); // Much darker amber yellow
 
     // Clear existing floor and edges with proper cleanup
     if (this.floor) {
@@ -237,7 +240,7 @@ export class DetailView {
     // Add floating title at T-junction
     const bubbleName = this.portfolioData?.title || 'Memory';
     const titleText = `${bubbleName}'s Memory Hall`;
-    this.createFloatingTitle(titleText, 0, 25, junctionZ - tBarLength - 4 + 10, this.accentColor);
+    this.createFloatingTitle(titleText, 0, 25, junctionZ - tBarLength - 4 + 10, this.originalAccentColor);
   }
 
   /**
@@ -350,17 +353,17 @@ export class DetailView {
    * Create glowing edges for the T-shaped floor with orb-style glow
    */
   createGlowingEdges(mainWidth, mainLength, tBarWidth, tBarLength, entranceExtension, tBarExtension, entranceZ, junctionZ) {
-    // Thinner solid core
+    // Darker solid core
     const coreMaterial = new THREE.MeshBasicMaterial({
-      color: this.accentColor,
+      color: 0xB87400, // Darker amber (about 25% darker)
       transparent: false
     });
 
-    // Softer glow material matching orb style
+    // Darker glow material
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: this.accentColor,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.20, // Reduced from 0.35 for darker glow
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending
     });
@@ -1134,7 +1137,7 @@ export class DetailView {
     
     const arcGeometry = new THREE.TubeGeometry(curve, 64, tubeRadius, 16, false);
     const arcMaterial = new THREE.MeshBasicMaterial({
-      color: this.accentColor,
+      color: 0xB87400, // Darker amber (about 25% darker)
       transparent: false, // Solid for better visibility
       opacity: 1.0
     });
@@ -1844,8 +1847,8 @@ export class DetailView {
    * Show flashing welcome text when entering memory hall
    */
   showWelcomeText() {
-    // Get accent color
-    const accentColorHex = this.accentColor ? this.accentColor.getHexString() : 'FFD700';
+    // Use original accent color (not the darker floor color)
+    const accentColorHex = this.originalAccentColor ? this.originalAccentColor.getHexString() : 'FFD700';
     const r = parseInt(accentColorHex.slice(0, 2), 16);
     const g = parseInt(accentColorHex.slice(2, 4), 16);
     const b = parseInt(accentColorHex.slice(4, 6), 16);
