@@ -41,7 +41,21 @@ const portfolioData = [
       placeholder3: "First swimming with friends",
       placeholder4: "Enchanted Kingdom Throwback pic",
       placeholder5: "Calica Cousins",
-      placeholder6: "Lakeside Sunset pic"
+      placeholder6: "Lakeside Sunset pic",
+      placeholder7: "Memory 7",
+      placeholder8: "Memory 8",
+      placeholder9: "Memory 9",
+      placeholder10: "Memory 10",
+      placeholder11: "Memory 11",
+      placeholder12: "Memory 12",
+      placeholder13: "Memory 13",
+      placeholder14: "Memory 14",
+      placeholder15: "Memory 15",
+      placeholder16: "Memory 16",
+      placeholder17: "Memory 17",
+      placeholder18: "Memory 18",
+      placeholder19: "Memory 19",
+      placeholder20: "Memory 20"
     }
   },
   {
@@ -49,7 +63,7 @@ const portfolioData = [
     title: "Kylabidaboo",
     description: "Kylabidaboo - Unique and vibrant creative works that push the boundaries of imagination.",
     image: "assets/images/kylabidaboo.jpg",
-    color: "#E24A90",
+    color: "#FF1493",
     folder: "kylabidaboo",
     cardTitles: {
       overview: "Little Pookielay",
@@ -63,7 +77,21 @@ const portfolioData = [
       placeholder3: "With ante and aleng",
       placeholder4: "My Family",
       placeholder5: "BFFs",
-      placeholder6: "Wacky with Fam"
+      placeholder6: "Wacky with Fam",
+      placeholder7: "Memory 7",
+      placeholder8: "Memory 8",
+      placeholder9: "Memory 9",
+      placeholder10: "Memory 10",
+      placeholder11: "Memory 11",
+      placeholder12: "Memory 12",
+      placeholder13: "Memory 13",
+      placeholder14: "Memory 14",
+      placeholder15: "Memory 15",
+      placeholder16: "Memory 16",
+      placeholder17: "Memory 17",
+      placeholder18: "Memory 18",
+      placeholder19: "Memory 19",
+      placeholder20: "Memory 20"
     }
   },
   {
@@ -85,7 +113,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -107,7 +149,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -129,7 +185,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -151,7 +221,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -173,7 +257,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -195,7 +293,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -217,7 +329,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -239,7 +365,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -261,7 +401,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -283,7 +437,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   },
   {
@@ -327,7 +495,21 @@ const portfolioData = [
       placeholder3: "Placeholder 3",
       placeholder4: "Placeholder 4",
       placeholder5: "Placeholder 5",
-      placeholder6: "Placeholder 6"
+      placeholder6: "Placeholder 6",
+      placeholder7: "Placeholder 7",
+      placeholder8: "Placeholder 8",
+      placeholder9: "Placeholder 9",
+      placeholder10: "Placeholder 10",
+      placeholder11: "Placeholder 11",
+      placeholder12: "Placeholder 12",
+      placeholder13: "Placeholder 13",
+      placeholder14: "Placeholder 14",
+      placeholder15: "Placeholder 15",
+      placeholder16: "Placeholder 16",
+      placeholder17: "Placeholder 17",
+      placeholder18: "Placeholder 18",
+      placeholder19: "Placeholder 19",
+      placeholder20: "Placeholder 20"
     }
   }
 ];

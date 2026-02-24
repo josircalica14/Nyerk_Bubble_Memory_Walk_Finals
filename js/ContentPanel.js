@@ -66,6 +66,9 @@ class ContentPanel {
     // Store current data
     this.currentData = data;
     
+    // Store portfolio ID on panel for DetailView access
+    this.panel.dataset.portfolioId = data.id;
+    
     // Populate panel with content
     this.contentTitle.textContent = data.title || '';
     this.contentDescription.textContent = data.description || '';

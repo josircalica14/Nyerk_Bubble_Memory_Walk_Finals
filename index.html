@@ -12,8 +12,6 @@
     <link rel="stylesheet" href="css/bubbles.css">
     <link rel="stylesheet" href="css/content-panel.css">
     <link rel="stylesheet" href="css/loading-page.css">
-    <link rel="stylesheet" href="css/detail-view.css?v=2">
-    <link rel="stylesheet" href="css/orb-modal.css">
     <link rel="stylesheet" href="css/visual-enhancements.css">
     <link rel="stylesheet" href="css/fallback.css">
 </head>
@@ -64,114 +62,82 @@
                 <h2 class="loading-title">Entering Memory Hall...</h2>
             </div>
         </div>
-        
-        <!-- Detail View Page -->
-        <div id="detail-view" class="detail-view" aria-hidden="true">
-            <button id="back-btn" class="back-button" aria-label="Back to portfolio">
-                <span>←</span> Back
-            </button>
-            
-            <div class="detail-container">
-                <h1 class="detail-title">Portfolio Item Title</h1>
-                
-                <div class="wall-grid">
-                    <div class="wall-box box-1" data-card="overview">
-                        <h3>Overview</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-2" data-card="gallery">
-                        <h3>Gallery</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-3" data-card="technologies">
-                        <h3>Technologies</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-4" data-card="details">
-                        <h3>Details</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-5" data-card="links">
-                        <h3>Links</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-6" data-card="contact">
-                        <h3>Contact</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <!-- Additional placeholder cards -->
-                    <div class="wall-box box-9" data-card="placeholder1">
-                        <h3>Placeholder 1</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-10" data-card="placeholder2">
-                        <h3>Placeholder 2</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-11" data-card="placeholder3">
-                        <h3>Placeholder 3</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-12" data-card="placeholder4">
-                        <h3>Placeholder 4</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-13" data-card="placeholder5">
-                        <h3>Placeholder 5</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-14" data-card="placeholder6">
-                        <h3>Placeholder 6</h3>
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <div class="wall-box box-7 title-card">
-                        <h2 id="portfolio-title">Memory Hall</h2>
-                    </div>
-                    
-                    <!-- Main bubble above title card -->
-                    <div class="wall-box box-15 main-bubble">
-                        <div class="card-images"></div>
-                    </div>
-                    
-                    <!-- Exit door -->
-                    <div class="exit-door">
-                        <div class="door-frame">
-                            <div class="door-glow"></div>
-                            <div class="door-label">EXIT</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
     
     <!-- White fade transition overlay -->
     <div class="white-fade-overlay"></div>
+    
+    <!-- Three.js Library -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
     
     <!-- JavaScript Files -->
     <script src="js/utils.js"></script>
     <script src="js/config.js"></script>
     <script src="js/AudioManager.js"></script>
     <script src="js/VisualEffects.js"></script>
-    <script src="js/OrbModal.js"></script>
     <script src="js/BubbleManager.js"></script>
     <script src="js/CameraController.js"></script>
     <script src="js/ContentPanel.js"></script>
-    <script src="js/DetailView.js"></script>
     <script src="js/InteractionHandler.js"></script>
     <script src="js/PortfolioMuseum.js"></script>
+    <script type="module">
+        // Import Detail View
+        import { DetailView } from './js/threejs/DetailView.js';
+        
+        // Initialize Detail View
+        const detailView = new DetailView();
+        detailView.init();
+        
+        // Store globally
+        window.detailView = detailView;
+        
+        // Connect to "Enter Memory Hall" button
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const enterButton = document.querySelector('.content-panel .content-button:first-child');
+                console.log('Looking for Enter button:', enterButton);
+                
+                if (enterButton) {
+                    enterButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        console.log('Enter button clicked!');
+                        
+                        // Get accent color from content panel
+                        const contentPanel = document.getElementById('content-panel');
+                        const accentColor = getComputedStyle(contentPanel).getPropertyValue('--bubble-color') || '#FF69B4';
+                        console.log('Accent color:', accentColor);
+                        
+                        // Get current portfolio item from the panel's data attribute
+                        const portfolioId = contentPanel.dataset.portfolioId;
+                        console.log('Portfolio ID:', portfolioId);
+                        
+                        const portfolioItem = window.portfolioData?.find(item => item.id == portfolioId);
+                        console.log('Portfolio item:', portfolioItem);
+                        
+                        // Close content panel
+                        const closeBtn = contentPanel.querySelector('.close-btn');
+                        if (closeBtn) closeBtn.click();
+                        
+                        // Show detail view after panel closes
+                        setTimeout(() => {
+                            console.log('Showing detail view...');
+                            detailView.show(accentColor, portfolioItem);
+                        }, 400);
+                    });
+                    
+                    console.log('Detail View connected to Enter button');
+                } else {
+                    console.error('Enter button not found!');
+                }
+            }, 1000);
+        });
+    </script>
     <script>
         /**
          * Main initialization script for 3D Bubble Portfolio Museum
@@ -255,28 +221,6 @@
                     return;
                 }
                 
-                // Initialize DetailView with audio manager
-                const detailView = new DetailView(audioManager);
-                window.detailView = detailView;
-                
-                // Feature detection for 3D transforms
-                if (!supports3D()) {
-                    console.warn('3D transforms not supported. Using 2D fallback layout.');
-                    
-                    // Get content panel for fallback
-                    const contentPanel = new ContentPanel();
-                    
-                    // Create 2D fallback layout
-                    create2DFallback(container, portfolioData, (item) => {
-                        contentPanel.show(item);
-                    });
-                    
-                    // Store content panel globally for debugging
-                    window.contentPanel = contentPanel;
-                    
-                    return;
-                }
-                
                 // Initialize Portfolio Museum with error handling
                 try {
                     const museum = new PortfolioMuseum({
@@ -290,51 +234,6 @@
                     
                     // Store museum instance globally for debugging
                     window.portfolioMuseum = museum;
-                    
-                    // Connect "View Details" button after museum is initialized
-                    setTimeout(() => {
-                        const viewDetailsBtn = document.querySelector('.content-button:first-child');
-                        const loadingPage = document.getElementById('loading-page');
-                        
-                        if (viewDetailsBtn) {
-                            console.log('View Details button found, attaching listener');
-                            viewDetailsBtn.addEventListener('click', () => {
-                                console.log('View Details clicked');
-                                const contentPanel = museum.contentPanel;
-                                if (contentPanel && contentPanel.isOpen && contentPanel.currentData) {
-                                    const currentData = contentPanel.currentData;
-                                    
-                                    // Update loading title with person's name
-                                    const loadingTitle = loadingPage.querySelector('.loading-title');
-                                    if (loadingTitle && currentData.title) {
-                                        loadingTitle.textContent = `Entering ${currentData.title}'s Memory Hall...`;
-                                    }
-                                    
-                                    // Close content panel
-                                    contentPanel.hide();
-                                    
-                                    // Show loading page after panel closes
-                                    setTimeout(() => {
-                                        loadingPage.classList.add('active');
-                                        loadingPage.setAttribute('aria-hidden', 'false');
-                                        
-                                        // Show detail view after loading delay
-                                        setTimeout(() => {
-                                            detailView.show(currentData);
-                                            
-                                            // Hide loading page after detail view is shown
-                                            setTimeout(() => {
-                                                loadingPage.classList.remove('active');
-                                                loadingPage.setAttribute('aria-hidden', 'true');
-                                            }, 500);
-                                        }, 1500); // Loading duration
-                                    }, 400);
-                                }
-                            });
-                        } else {
-                            console.error('View Details button not found');
-                        }
-                    }, 500);
                     
                 } catch (error) {
                     console.error('Failed to initialize Portfolio Museum:', error);
