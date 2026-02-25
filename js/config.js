@@ -38,7 +38,7 @@ const portfolioData = [
       contact: "Little Cookie <3",
       placeholder1: "Little Jay with Ate Chuchay",
       placeholder2: "With Kuya, wTito & Cousins",
-      placeholder3: "First swimming with friends",
+      placeholder3: "NYERK Swimming Part 1",
       placeholder4: "Enchanted Kingdom Throwback pic",
       placeholder5: "Calica Cousins",
       placeholder6: "Lakeside Sunset pic",
@@ -53,7 +53,7 @@ const portfolioData = [
       placeholder15: "Memory 15",
       placeholder16: "Memory 16",
       placeholder17: "Memory 17",
-      placeholder18: "Memory 18",
+      placeholder18: "NYERK Swimming Part 2",
       placeholder19: "Memory 19",
       placeholder20: "Memory 20",
       placeholder21: "Memory 21"
