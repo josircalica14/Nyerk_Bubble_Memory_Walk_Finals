@@ -4,6 +4,7 @@
  */
 
 import * as THREE from 'three';
+import { LoadingScreen } from './LoadingScreen.js';
 
 export class DetailView {
   constructor() {
@@ -81,10 +82,16 @@ export class DetailView {
     this.cameraRotation.x = 0; // Look straight ahead
     this.cameraRotation.y = 0;
 
-    // Create renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Create renderer with optimized settings
+    this.renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true
+    });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = false; // Disable shadows for better performance
     this.container.appendChild(this.renderer.domElement);
 
     // Add lighting for reflections
@@ -94,7 +101,7 @@ export class DetailView {
     // Add directional light from above for reflections
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
     directionalLight.position.set(0, 30, 0);
-    directionalLight.castShadow = true;
+    directionalLight.castShadow = false; // Disable shadows
     this.scene.add(directionalLight);
     
     // Add hemisphere light for ambient fill
@@ -2031,9 +2038,9 @@ export class DetailView {
   }
 
   /**
-   * Show the detail view
+   * Show the detail view with loading screen
    */
-  show(accentColor, portfolioData = null) {
+  async show(accentColor, portfolioData = null) {
     console.log('DetailView.show called with:', accentColor, portfolioData);
     
     if (!this.container) {
@@ -2053,9 +2060,73 @@ export class DetailView {
     this.keys = { forward: false, backward: false, left: false, right: false };
 
     this.portfolioData = portfolioData;
+    
+    // Create and show loading screen with animations
+    const loadingScreen = new LoadingScreen(accentColor);
+    loadingScreen.show();
+    
+    // Keep container hidden during loading
+    this.container.style.display = 'none';
+    this.container.style.opacity = '0';
+    
+    // Simulate loading progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 10;
+      if (progress > 85) progress = 85;
+      loadingScreen.setProgress(progress);
+    }, 150);
+    
+    // Load memory hall assets - extended timing
+    await new Promise(resolve => setTimeout(resolve, 800));
+    loadingScreen.setProgress(30);
+    
     this.createTShapedFloor(accentColor);
-    this.container.style.display = 'block';
+    loadingScreen.setProgress(70);
+    
+    await new Promise(resolve => setTimeout(resolve, 600));
+    loadingScreen.setProgress(100);
+    
+    clearInterval(progressInterval);
+    
+    // Set isActive FIRST so animations will run
     this.isActive = true;
+    
+    // Show Memory Hall container NOW (while loading screen is still at 100%)
+    this.container.style.display = 'block';
+    this.container.style.opacity = '1'; // Memory Hall is fully visible
+    this.container.style.transition = 'none';
+    this.container.style.zIndex = '9998'; // Just below loading screen
+    
+    // CRITICAL: Force browser to render Memory Hall by triggering reflow
+    this.container.offsetHeight; // Force reflow
+    
+    // Start animation loop - animations will now run because isActive is true
+    this.animate();
+    
+    // Wait for Memory Hall to fully render
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Wait at 100% to show completion
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Fade loading screen animations to black (keep black background)
+    await loadingScreen.fadeToBlack();
+    
+    // Hold on solid black screen before transitioning
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Now fade out the loading screen (black overlay) to reveal Memory Hall underneath
+    // Using longer duration and cubic-bezier for smoother, more elegant fade
+    if (loadingScreen.container) {
+      loadingScreen.container.style.transition = 'opacity 1.5s cubic-bezier(0.4, 0.0, 0.2, 1)';
+      loadingScreen.container.style.opacity = '0';
+    }
+    
+    // Wait for fade to complete, then cleanup loading screen and restore z-index
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    this.container.style.zIndex = '200'; // Restore original z-index
+    await loadingScreen.hide();
     
     // Add back button
     this.createBackButton();
@@ -2063,8 +2134,10 @@ export class DetailView {
     // Add controls
     this.addControls();
     
-    // Show welcome text
-    this.showWelcomeText();
+    // Show welcome text 2 seconds after loading Memory Hall
+    setTimeout(() => {
+      this.showWelcomeText();
+    }, 1000);
     
     this.animate();
     
@@ -2081,122 +2154,111 @@ export class DetailView {
     const g = parseInt(accentColorHex.slice(2, 4), 16);
     const b = parseInt(accentColorHex.slice(4, 6), 16);
     
-    // Create dark overlay to focus attention
-    const darkOverlay = document.createElement('div');
-    darkOverlay.id = 'welcome-dark-overlay';
-    darkOverlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 249;
-      pointer-events: none;
-      animation: fadeOverlay 3s ease-in-out;
-    `;
-    
-    // Create welcome container with blurred background (no border)
-    const welcomeContainer = document.createElement('div');
-    welcomeContainer.id = 'welcome-container';
-    welcomeContainer.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 250;
-      text-align: center;
-      pointer-events: none;
-      animation: scaleContainer 3s ease-in-out;
-    `;
-    
-    // Create welcome text
-    const welcomeText = document.createElement('div');
-    const portfolioName = this.portfolioData?.title || 'Memory';
-    welcomeText.textContent = `Welcome to ${portfolioName}'s Memory Hall!`;
-    welcomeText.style.cssText = `
-      font-size: 3rem;
-      font-weight: bold;
-      color: white;
-      text-shadow: 
-        0 0 20px rgba(${r}, ${g}, ${b}, 1),
-        0 0 40px rgba(${r}, ${g}, ${b}, 0.8),
-        0 0 60px rgba(${r}, ${g}, ${b}, 0.6),
-        2px 2px 4px rgba(0, 0, 0, 0.8);
-      animation: flashWelcome 3s ease-in-out;
-      white-space: nowrap;
-    `;
-    
-    welcomeContainer.appendChild(welcomeText);
-    this.container.appendChild(darkOverlay);
-    this.container.appendChild(welcomeContainer);
-    
-    // Add CSS animations
-    if (!document.querySelector('#welcome-animation-style')) {
-      const style = document.createElement('style');
-      style.id = 'welcome-animation-style';
-      style.textContent = `
-        @keyframes fadeOverlay {
-          0% {
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          70% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0;
-          }
-        }
-        
-        @keyframes scaleContainer {
-          0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9);
-          }
-          15% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-          }
-          70% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(1);
-          }
-        }
-        
-        @keyframes flashWelcome {
-          0% {
-            opacity: 0;
-          }
-          15% {
-            opacity: 1;
-          }
-          70% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0;
-          }
-        }
+    // Use requestAnimationFrame to avoid blocking the render loop
+    requestAnimationFrame(() => {
+      // Create dark overlay to focus attention
+      const darkOverlay = document.createElement('div');
+      darkOverlay.id = 'welcome-dark-overlay';
+      darkOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 249;
+        pointer-events: none;
+        will-change: opacity;
+        animation: fadeOverlay 3s ease-in-out;
       `;
-      document.head.appendChild(style);
-    }
-    
-    // Remove welcome elements after animation (3 seconds)
-    setTimeout(() => {
-      if (darkOverlay && darkOverlay.parentNode) {
-        darkOverlay.remove();
+      
+      // Create welcome container with blurred background (no border)
+      const welcomeContainer = document.createElement('div');
+      welcomeContainer.id = 'welcome-container';
+      welcomeContainer.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 250;
+        text-align: center;
+        pointer-events: none;
+        will-change: transform, opacity;
+        animation: scaleContainer 3s ease-in-out;
+      `;
+      
+      // Create welcome text with optimized shadows
+      const welcomeText = document.createElement('div');
+      const portfolioName = this.portfolioData?.title || 'Memory';
+      welcomeText.textContent = `Welcome to ${portfolioName}'s Memory Hall!`;
+      welcomeText.style.cssText = `
+        font-size: 3rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 
+          0 0 20px rgba(${r}, ${g}, ${b}, 1),
+          0 0 40px rgba(${r}, ${g}, ${b}, 0.6),
+          2px 2px 4px rgba(0, 0, 0, 0.8);
+        animation: flashWelcome 3s ease-in-out;
+        white-space: nowrap;
+        will-change: opacity;
+      `;
+      
+      welcomeContainer.appendChild(welcomeText);
+      this.container.appendChild(darkOverlay);
+      this.container.appendChild(welcomeContainer);
+      
+      // Add CSS animations only once
+      if (!document.querySelector('#welcome-animation-style')) {
+        const style = document.createElement('style');
+        style.id = 'welcome-animation-style';
+        style.textContent = `
+          @keyframes fadeOverlay {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          
+          @keyframes scaleContainer {
+            0% {
+              opacity: 0;
+              transform: translate(-50%, -50%) scale(0.9);
+            }
+            15% {
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+            70% {
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translate(-50%, -50%) scale(1);
+            }
+          }
+          
+          @keyframes flashWelcome {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
       }
-      if (welcomeContainer && welcomeContainer.parentNode) {
-        welcomeContainer.remove();
-      }
-    }, 3000);
+      
+      // Remove welcome elements after animation (3 seconds)
+      setTimeout(() => {
+        if (darkOverlay && darkOverlay.parentNode) {
+          darkOverlay.remove();
+        }
+        if (welcomeContainer && welcomeContainer.parentNode) {
+          welcomeContainer.remove();
+        }
+      }, 3000);
+    });
   }
 
   /**
@@ -2531,7 +2593,7 @@ export class DetailView {
   }
   
   /**
-   * Show image card with glassmorphism styling themed like gold orbs
+   * Show image card with circular styling
    */
   showImageCard(imagePath, caption, orbIndex = null) {
     // Get the orb data if orbIndex is provided
@@ -2543,48 +2605,115 @@ export class DetailView {
     const existingCard = this.container.querySelector('.memory-card');
     if (existingCard) existingCard.remove();
     
+    // Check if this is a video or image path
+    const isVideo = imagePath && imagePath.endsWith('.mp4');
+    
+    // Pause Three.js animation for performance
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    // Create backdrop with blur
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0);
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
+      z-index: 999;
+      transition: all 0.3s ease;
+    `;
+    this.container.appendChild(backdrop);
+    
+    // Trigger backdrop animation
+    setTimeout(() => {
+      backdrop.style.background = 'rgba(0, 0, 0, 0.7)';
+      backdrop.style.backdropFilter = 'blur(10px)';
+      backdrop.style.webkitBackdropFilter = 'blur(10px)';
+    }, 10);
+    
+    // Create circular card container styled like a zoomed memory orb
+    // Make it wider for videos to show more content
+    const modalSize = isVideo ? 'min(90vw, 800px)' : 'min(90vw, 90vh, 600px)';
+    const modalHeight = isVideo ? 'min(60vh, 600px)' : 'min(90vw, 90vh, 600px)';
+    
     const card = document.createElement('div');
     card.className = 'memory-card';
     card.style.cssText = `
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      width: auto;
-      max-width: 90vw;
-      max-height: 90vh;
-      background: rgba(20, 15, 5, 0.95);
-      backdrop-filter: blur(20px);
-      border: 3px solid rgba(255, 215, 0, 0.6);
-      border-radius: 20px;
-      padding: 2rem;
-      z-index: 300;
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.7);
-      animation: cardFadeIn 0.3s ease;
+      transform: translate(-50%, -50%) scale(0.8);
+      width: ${modalSize};
+      height: ${modalHeight};
+      background: rgba(255, 196, 1, 0.90);
+      border: 3px solid rgba(255, 196, 1, 0.8);
+      border-radius: ${isVideo ? '40px' : '50%'};
+      z-index: 1000;
       display: flex;
       flex-direction: column;
+      opacity: 0;
+      transition: all 0.3s ease;
       align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 0 40px rgba(255, 196, 1, 0.7),
+        0 0 80px rgba(255, 196, 1, 0.5),
+        0 0 120px rgba(255, 196, 1, 0.3),
+        inset 0 0 60px rgba(255, 196, 1, 0.15);
+      padding: 0.2rem;
+      animation: modalPulse 3s ease-in-out infinite;
+      overflow: hidden;
     `;
     
+    // Caption - positioned outside above the modal
     const captionEl = document.createElement('h3');
     captionEl.textContent = caption;
     captionEl.style.cssText = `
       color: #FFD700;
       font-size: 1.8rem;
-      margin: 0 0 1.5rem 0;
+      margin: 0;
       text-align: center;
-      text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
-      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      position: fixed;
+      top: calc(50% - min(90vw, 90vh, 600px) / 2 - 60px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
+      opacity: 0;
+      transition: opacity 0.3s ease 0.1s;
     `;
     card.appendChild(captionEl);
     
-    // Check if this is a video or image path
-    const isVideo = imagePath && imagePath.endsWith('.mp4');
+    // Trigger animations after elements are added to DOM
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translate(-50%, -50%) scale(1)';
+      captionEl.style.opacity = '1';
+    }, 10);
+    
+    // Media container - fills entire modal
+    const mediaContainer = document.createElement('div');
+    mediaContainer.style.cssText = `
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: ${isVideo ? '40px' : '50%'};
+      overflow: hidden;
+    `;
     
     // Add media if path is provided
     if (imagePath) {
       if (isVideo) {
-        // Create video element
         const video = document.createElement('video');
         video.src = imagePath;
         video.controls = true;
@@ -2592,109 +2721,253 @@ export class DetailView {
         video.loop = true;
         video.muted = false;
         video.style.cssText = `
-          max-width: 80vw;
-          max-height: 65vh;
+          max-width: 100%;
+          max-height: 100%;
           width: auto;
           height: auto;
           object-fit: contain;
-          border-radius: 12px;
-          margin-bottom: 1rem;
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+          object-position: center;
         `;
         
-        video.onerror = () => {
-          console.log('Video failed to load, trying image:', imagePath);
-          // Try image fallback
-          const imgPath = imagePath.replace('.mp4', '.jpg');
-          const img = document.createElement('img');
-          img.src = imgPath;
-          img.alt = caption;
-          img.style.cssText = video.style.cssText;
-          img.onerror = () => {
-            // Show placeholder if both fail
-            const placeholder = document.createElement('div');
-            placeholder.style.cssText = `
-              width: 400px;
-              height: 300px;
-              background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 180, 0, 0.15));
-              border-radius: 12px;
-              margin-bottom: 1rem;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: rgba(255, 215, 0, 0.5);
-              font-size: 1rem;
-              border: 2px solid rgba(255, 215, 0, 0.2);
-            `;
-            placeholder.textContent = 'Empty Memory';
-            img.parentNode.replaceChild(placeholder, img);
-          };
-          video.parentNode.replaceChild(img, video);
-        };
+        // Adjust modal size once video metadata is loaded
+        video.addEventListener('loadedmetadata', () => {
+          const videoAspect = video.videoWidth / video.videoHeight;
+          const maxWidth = Math.min(window.innerWidth * 0.9, 1000);
+          const maxHeight = Math.min(window.innerHeight * 0.8, 700);
+          
+          let modalWidth, modalHeight;
+          
+          if (videoAspect > maxWidth / maxHeight) {
+            // Video is wider - fit to width
+            modalWidth = maxWidth;
+            modalHeight = maxWidth / videoAspect;
+          } else {
+            // Video is taller - fit to height
+            modalHeight = maxHeight;
+            modalWidth = maxHeight * videoAspect;
+          }
+          
+          // Update card dimensions
+          card.style.width = `${modalWidth}px`;
+          card.style.height = `${modalHeight}px`;
+          
+          // Update caption and button positions
+          captionEl.style.top = `calc(50% - ${modalHeight / 2}px - 60px)`;
+          if (hasMultipleImages) {
+            if (card.navContainer) {
+              card.navContainer.style.top = `calc(50% + ${modalHeight / 2}px + 30px)`;
+            }
+            closeBtn.style.top = `calc(50% + ${modalHeight / 2}px + 90px)`;
+          } else {
+            closeBtn.style.top = `calc(50% + ${modalHeight / 2}px + 30px)`;
+          }
+        });
         
-        card.appendChild(video);
+        mediaContainer.appendChild(video);
+        
+        // Add colored vignette overlay on the video (amber) - rounded rectangle
+        const videoVignette = document.createElement('div');
+        videoVignette.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 40px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(247, 156, 0, 0) 0%,
+            rgba(247, 156, 0, 0) 30%,
+            rgba(247, 156, 0, 0.1) 45%,
+            rgba(247, 156, 0, 0.2) 58%,
+            rgba(247, 156, 0, 0.35) 70%,
+            rgba(247, 156, 0, 0.5) 80%,
+            rgba(247, 156, 0, 0.7) 90%,
+            rgba(247, 156, 0, 0.85) 96%,
+            rgba(247, 156, 0, 1) 100%
+          );
+          pointer-events: none;
+          z-index: 1;
+        `;
+        mediaContainer.appendChild(videoVignette);
       } else {
-        // Create image element
         const img = document.createElement('img');
         img.src = imagePath;
         img.alt = caption;
         img.style.cssText = `
-          max-width: 80vw;
-          max-height: 65vh;
-          width: auto;
-          height: auto;
-          object-fit: contain;
-          border-radius: 12px;
-          margin-bottom: 1rem;
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
         `;
+        mediaContainer.appendChild(img);
         
-        img.onerror = () => {
-          console.log('Image failed to load:', imagePath);
-          // Show placeholder
-          const placeholder = document.createElement('div');
-          placeholder.style.cssText = `
-            width: 400px;
-            height: 300px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 180, 0, 0.15));
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255, 215, 0, 0.5);
-            font-size: 1rem;
-            border: 2px solid rgba(255, 215, 0, 0.2);
-          `;
-          placeholder.textContent = 'Empty Memory';
-          img.parentNode.replaceChild(placeholder, img);
-        };
-        
-        card.appendChild(img);
+        // Add colored vignette overlay on the image (amber) - intensified with solid outer edge
+        const imageVignette = document.createElement('div');
+        imageVignette.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle at center,
+            rgba(255, 187, 1, 0) 0%,
+            rgba(255, 187, 1, 0) 15%,
+            rgba(255, 187, 1, 0.2) 30%,
+            rgba(255, 187, 1, 0.4) 42%,
+            rgba(255, 187, 1, 0.6) 54%,
+            rgba(255, 187, 1, 0.8) 68%,
+            rgba(255, 187, 1, 0.95) 80%,
+            rgba(255, 187, 1, 1) 90%,
+            rgba(255, 187, 1, 1) 100%
+          );
+          pointer-events: none;
+          z-index: 1;
+        `;
+        mediaContainer.appendChild(imageVignette);
       }
-    } else {
-      // Fallback for missing media
-      const placeholder = document.createElement('div');
-      placeholder.style.cssText = `
-        width: 400px;
-        height: 300px;
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 180, 0, 0.15));
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255, 215, 0, 0.5);
-        font-size: 1rem;
-        border: 2px solid rgba(255, 215, 0, 0.2);
-      `;
-      placeholder.textContent = 'Empty Memory';
-      card.appendChild(placeholder);
     }
     
-    // Add navigation if multiple images exist
+    card.appendChild(mediaContainer);
+    
+    // Full view toggle button and navigation - positioned outside above close button
+    let isFullView = false;
+    
+    // Create full view toggle button (for images only, not videos)
+    let fullViewBtn = null;
+    if (!isVideo) {
+      fullViewBtn = document.createElement('button');
+      fullViewBtn.textContent = '🔍 Full View';
+      fullViewBtn.style.cssText = `
+        padding: 0.6rem 1.2rem;
+        background: rgba(255, 215, 0, 0.2);
+        border: 2px solid rgba(255, 215, 0, 0.5);
+        border-radius: 20px;
+        color: #FFD700;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        white-space: nowrap;
+      `;
+      
+      fullViewBtn.addEventListener('mouseenter', () => {
+        fullViewBtn.style.background = 'rgba(255, 215, 0, 0.4)';
+        fullViewBtn.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
+        fullViewBtn.style.transform = 'scale(1.05)';
+      });
+      
+      fullViewBtn.addEventListener('mouseleave', () => {
+        fullViewBtn.style.background = 'rgba(255, 215, 0, 0.2)';
+        fullViewBtn.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+        fullViewBtn.style.transform = 'scale(1)';
+      });
+      
+      fullViewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isFullView = !isFullView;
+        
+        const imgElement = mediaContainer.querySelector('img');
+        const vignette = mediaContainer.querySelector('div');
+        
+        if (isFullView) {
+          // Full view - resize modal to fit original image dimensions
+          if (imgElement && imgElement.naturalWidth && imgElement.naturalHeight) {
+            const imgAspect = imgElement.naturalWidth / imgElement.naturalHeight;
+            
+            // Reserve more space for caption (80px above) and controls (180px below for nav + close button)
+            const reservedVerticalSpace = 280;
+            const maxWidth = Math.min(window.innerWidth * 0.7, imgElement.naturalWidth);
+            const maxHeight = Math.min(window.innerHeight - reservedVerticalSpace, imgElement.naturalHeight);
+            
+            let modalWidth, modalHeight;
+            
+            // Calculate dimensions to fit image while respecting max constraints
+            if (imgElement.naturalWidth > maxWidth || imgElement.naturalHeight > maxHeight) {
+              // Image is larger than max constraints, scale it down
+              if (imgAspect > maxWidth / maxHeight) {
+                modalWidth = maxWidth;
+                modalHeight = maxWidth / imgAspect;
+              } else {
+                modalHeight = maxHeight;
+                modalWidth = maxHeight * imgAspect;
+              }
+            } else {
+              // Image fits within constraints, use natural size
+              modalWidth = imgElement.naturalWidth;
+              modalHeight = imgElement.naturalHeight;
+            }
+            
+            // Update card dimensions with transition
+            card.style.transition = 'all 0.4s ease';
+            card.style.width = `${modalWidth}px`;
+            card.style.height = `${modalHeight}px`;
+            card.style.borderRadius = '40px';
+            
+            mediaContainer.style.borderRadius = '40px';
+            if (vignette) vignette.style.borderRadius = '40px';
+            if (imgElement) {
+              imgElement.style.objectFit = 'contain';
+              imgElement.style.borderRadius = '40px';
+            }
+            
+            // Update caption position
+            captionEl.style.transition = 'all 0.4s ease';
+            captionEl.style.top = `calc(50% - ${modalHeight / 2}px - 60px)`;
+            
+            // Update navigation and close button positions
+            if (card.navContainer) {
+              card.navContainer.style.transition = 'all 0.4s ease';
+              card.navContainer.style.top = `calc(50% + ${modalHeight / 2}px + 30px)`;
+            }
+            closeBtn.style.transition = 'all 0.4s ease';
+            if (hasMultipleImages) {
+              closeBtn.style.top = `calc(50% + ${modalHeight / 2}px + 90px)`;
+            } else {
+              closeBtn.style.top = `calc(50% + ${modalHeight / 2}px + 90px)`;
+            }
+          }
+          
+          fullViewBtn.textContent = '⭕ Circle View';
+        } else {
+          // Circle view - restore to circular modal
+          card.style.transition = 'all 0.4s ease';
+          card.style.width = modalSize;
+          card.style.height = modalHeight;
+          card.style.borderRadius = '50%';
+          
+          mediaContainer.style.borderRadius = '50%';
+          if (vignette) vignette.style.borderRadius = '50%';
+          if (imgElement) {
+            imgElement.style.objectFit = 'cover';
+            imgElement.style.borderRadius = '50%';
+          }
+          
+          // Restore caption position
+          captionEl.style.transition = 'all 0.4s ease';
+          captionEl.style.top = `calc(50% - min(90vw, 90vh, 600px) / 2 - 60px)`;
+          
+          // Restore navigation and close button positions
+          if (card.navContainer) {
+            card.navContainer.style.transition = 'all 0.4s ease';
+            card.navContainer.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 30px)`;
+          }
+          closeBtn.style.transition = 'all 0.4s ease';
+          if (hasMultipleImages) {
+            closeBtn.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 90px)`;
+          } else {
+            closeBtn.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 90px)`;
+          }
+          
+          fullViewBtn.textContent = '🔍 Full View';
+        }
+      });
+    }
+    
+    // Navigation for multiple images - positioned outside above close button
     if (hasMultipleImages && !isVideo) {
       const folder = this.portfolioData.folder;
       const cardKey = orb.cardKey;
@@ -2702,51 +2975,71 @@ export class DetailView {
       
       const navContainer = document.createElement('div');
       navContainer.style.cssText = `
+        position: fixed;
+        top: calc(50% + min(90vw, 90vh, 600px) / 2 + 30px);
+        left: 50%;
+        transform: translateX(-50%);
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 2rem;
-        margin-bottom: 1rem;
+        gap: 1.5rem;
+        z-index: 1001;
       `;
       
-      // Previous button
       const prevBtn = document.createElement('button');
-      prevBtn.textContent = '← Previous';
+      prevBtn.textContent = '←';
       prevBtn.style.cssText = `
-        padding: 0.75rem 1.5rem;
+        width: 40px;
+        height: 40px;
         background: rgba(255, 215, 0, 0.2);
         border: 2px solid rgba(255, 215, 0, 0.5);
-        border-radius: 10px;
+        border-radius: 50%;
         color: #FFD700;
-        font-size: 1rem;
-        font-weight: bold;
         cursor: pointer;
+        font-size: 1.2rem;
         transition: all 0.3s ease;
-        text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
       `;
       
-      // Counter
+      prevBtn.addEventListener('mouseenter', () => {
+        prevBtn.style.background = 'rgba(255, 215, 0, 0.4)';
+        prevBtn.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
+        prevBtn.style.transform = 'scale(1.1)';
+      });
+      
+      prevBtn.addEventListener('mouseleave', () => {
+        prevBtn.style.background = 'rgba(255, 215, 0, 0.2)';
+        prevBtn.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+        prevBtn.style.transform = 'scale(1)';
+      });
+      
       const counter = document.createElement('span');
       counter.textContent = `1 / ${totalImages}`;
       counter.style.cssText = `
         color: #FFD700;
-        font-size: 1.2rem;
-        font-weight: bold;
+        font-size: 1.1rem;
         text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
-        min-width: 100px;
-        text-align: center;
       `;
       
-      // Next button
       const nextBtn = document.createElement('button');
-      nextBtn.textContent = 'Next →';
+      nextBtn.textContent = '→';
       nextBtn.style.cssText = prevBtn.style.cssText;
       
-      // Update image function - instant transition
+      nextBtn.addEventListener('mouseenter', () => {
+        nextBtn.style.background = 'rgba(255, 215, 0, 0.4)';
+        nextBtn.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
+        nextBtn.style.transform = 'scale(1.1)';
+      });
+      
+      nextBtn.addEventListener('mouseleave', () => {
+        nextBtn.style.background = 'rgba(255, 215, 0, 0.2)';
+        nextBtn.style.boxShadow = '0 0 10px rgba(255, 215, 0, 0.3)';
+        nextBtn.style.transform = 'scale(1)';
+      });
+      
       const updateImage = () => {
         const imageNumber = currentImageIndex + 1;
         const newImagePath = `assets/portfolios/${folder}/${cardKey}/${imageNumber}.jpg`;
-        const imgElement = card.querySelector('img');
+        const imgElement = mediaContainer.querySelector('img');
         
         if (imgElement) {
           imgElement.src = newImagePath;
@@ -2754,7 +3047,6 @@ export class DetailView {
         }
       };
       
-      // Button handlers
       prevBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         currentImageIndex = (currentImageIndex - 1 + totalImages) % totalImages;
@@ -2767,78 +3059,147 @@ export class DetailView {
         updateImage();
       });
       
-      // Hover effects
-      [prevBtn, nextBtn].forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-          btn.style.background = 'rgba(255, 215, 0, 0.4)';
-          btn.style.transform = 'scale(1.05)';
-        });
-        btn.addEventListener('mouseleave', () => {
-          btn.style.background = 'rgba(255, 215, 0, 0.2)';
-          btn.style.transform = 'scale(1)';
-        });
-      });
-      
       navContainer.appendChild(prevBtn);
       navContainer.appendChild(counter);
       navContainer.appendChild(nextBtn);
-      card.appendChild(navContainer);
+      
+      // Add full view button to navigation container
+      if (fullViewBtn) {
+        navContainer.appendChild(fullViewBtn);
+      }
+      
+      this.container.appendChild(navContainer);
+      
+      // Store reference for cleanup
+      card.navContainer = navContainer;
+    } else if (fullViewBtn && !isVideo) {
+      // No multiple images, but still show full view button alone
+      const navContainer = document.createElement('div');
+      navContainer.style.cssText = `
+        position: fixed;
+        top: calc(50% + min(90vw, 90vh, 600px) / 2 + 30px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        z-index: 1001;
+      `;
+      
+      navContainer.appendChild(fullViewBtn);
+      this.container.appendChild(navContainer);
+      card.navContainer = navContainer;
     }
     
+    // Close button - positioned outside below navigation
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'Close';
     closeBtn.style.cssText = `
-      width: 100%;
-      max-width: 400px;
-      padding: 0.75rem;
-      background: rgba(255, 215, 0, 0.15);
-      border: 2px solid rgba(255, 215, 0, 0.5);
-      border-radius: 10px;
+      position: fixed;
+      top: calc(50% + min(90vw, 90vh, 600px) / 2 + 90px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.75rem 2rem;
+      background: rgba(255, 215, 0, 0.3);
+      border: 2px solid rgba(255, 215, 0, 0.6);
+      border-radius: 25px;
       color: #FFD700;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s ease;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      z-index: 1001;
+      opacity: 0;
+      transition: all 0.3s ease 0.15s;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
     `;
     
+    // Fade in close button
+    setTimeout(() => {
+      closeBtn.style.opacity = '1';
+    }, 10);
+    
     closeBtn.addEventListener('mouseenter', () => {
-      closeBtn.style.background = 'rgba(255, 215, 0, 0.3)';
-      closeBtn.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.4)';
-      closeBtn.style.transform = 'scale(1.05)';
+      closeBtn.style.background = 'rgba(255, 215, 0, 0.5)';
+      closeBtn.style.boxShadow = '0 0 25px rgba(255, 215, 0, 0.7)';
+      closeBtn.style.transform = 'translateX(-50%) scale(1.05)';
     });
     
     closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.background = 'rgba(255, 215, 0, 0.15)';
-      closeBtn.style.boxShadow = 'none';
-      closeBtn.style.transform = 'scale(1)';
+      closeBtn.style.background = 'rgba(255, 215, 0, 0.3)';
+      closeBtn.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.4)';
+      closeBtn.style.transform = 'translateX(-50%) scale(1)';
     });
     
     closeBtn.addEventListener('click', () => {
-      // Stop video if playing
       const video = card.querySelector('video');
       if (video) {
         video.pause();
+        video.src = ''; // Clear video source
+        video.load(); // Reset video element
       }
-      card.remove();
+      
+      // Animate out
+      card.style.opacity = '0';
+      card.style.transform = 'translate(-50%, -50%) scale(0.8)';
+      captionEl.style.opacity = '0';
+      closeBtn.style.opacity = '0';
+      backdrop.style.background = 'rgba(0, 0, 0, 0)';
+      backdrop.style.backdropFilter = 'blur(0px)';
+      backdrop.style.webkitBackdropFilter = 'blur(0px)';
+      if (card.navContainer) card.navContainer.style.opacity = '0';
+      
+      // Remove all modal elements after animation
+      setTimeout(() => {
+        // Clean up image element
+        const imgElement = card.querySelector('img');
+        if (imgElement) {
+          imgElement.src = ''; // Clear image source
+          imgElement.remove();
+        }
+        
+        // Clean up video element
+        if (video) {
+          video.remove();
+        }
+        
+        // Remove all elements
+        card.remove();
+        closeBtn.remove();
+        captionEl.remove();
+        backdrop.remove();
+        if (card.navContainer) card.navContainer.remove();
+        
+        // Resume Three.js animation
+        if (!this.animationFrameId) {
+          this.animate();
+        }
+      }, 300);
     });
     
+    this.container.appendChild(captionEl);
     card.appendChild(closeBtn);
     this.container.appendChild(card);
+    this.container.appendChild(closeBtn);
     
-    // Add animation keyframes if not exists
-    if (!document.querySelector('#memory-card-animation')) {
+    // Add animation keyframes for pulsing glow effect
+    if (!document.querySelector('#modal-pulse-animation')) {
       const style = document.createElement('style');
-      style.id = 'memory-card-animation';
+      style.id = 'modal-pulse-animation';
       style.textContent = `
-        @keyframes cardFadeIn {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9);
+        @keyframes modalPulse {
+          0%, 100% {
+            box-shadow: 
+              0 0 30px rgba(247, 156, 0, 0.6),
+              0 0 60px rgba(247, 156, 0, 0.4),
+              0 0 90px rgba(247, 156, 0, 0.2),
+              inset 0 0 40px rgba(247, 156, 0, 0.1);
           }
-          to {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+          50% {
+            box-shadow: 
+              0 0 40px rgba(247, 156, 0, 0.8),
+              0 0 80px rgba(247, 156, 0, 0.5),
+              0 0 120px rgba(247, 156, 0, 0.3),
+              inset 0 0 50px rgba(247, 156, 0, 0.15);
           }
         }
       `;
@@ -2923,7 +3284,7 @@ export class DetailView {
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
+      border-radius: 60px;
       box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
       overflow: hidden;
     `;
@@ -3001,6 +3362,7 @@ export class DetailView {
         height: auto;
         object-fit: contain;
         object-position: center;
+        border-radius: 60px;
       `;
       
       // Show error if image fails
@@ -3496,17 +3858,49 @@ export class DetailView {
    * Hide the detail view
    */
   hide() {
-    this.isActive = false;
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
+    // Create fade overlay for smooth transition out
+    const fadeOverlay = document.createElement('div');
+    fadeOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+      pointer-events: none;
+    `;
+    document.body.appendChild(fadeOverlay);
     
-    // Remove controls
-    this.removeControls();
+    // Fade to white
+    setTimeout(() => {
+      fadeOverlay.style.opacity = '1';
+    }, 10);
     
-    if (this.container) {
-      this.container.style.display = 'none';
-    }
+    // Hide after fade completes
+    setTimeout(() => {
+      this.isActive = false;
+      if (this.animationFrameId) {
+        cancelAnimationFrame(this.animationFrameId);
+      }
+      
+      // Remove controls
+      this.removeControls();
+      
+      if (this.container) {
+        this.container.style.display = 'none';
+      }
+      
+      // Fade out overlay to reveal main museum
+      setTimeout(() => {
+        fadeOverlay.style.opacity = '0';
+        setTimeout(() => {
+          fadeOverlay.remove();
+        }, 800);
+      }, 100);
+    }, 900);
   }
 
   /**
@@ -3524,15 +3918,18 @@ export class DetailView {
     this.updateCamera(deltaTime);
 
     // Animate edge glow (skip door edges - they should be static)
-    this.edges.forEach((edge, index) => {
-      // Skip animation for door edges (they have additive blending)
-      if (edge.material.blending === THREE.AdditiveBlending && edge.material.opacity > 0.8) {
-        return; // Skip door edge frames
-      }
-      const offset = index * 0.5;
-      const intensity = 0.7 + Math.sin(this.time * 2 + offset) * 0.3;
-      edge.material.opacity = intensity;
-    });
+    // Optimize: Only update every other frame for edge glow
+    if (Math.floor(this.time * 60) % 2 === 0) {
+      this.edges.forEach((edge, index) => {
+        // Skip animation for door edges (they have additive blending)
+        if (edge.material.blending === THREE.AdditiveBlending && edge.material.opacity > 0.8) {
+          return; // Skip door edge frames
+        }
+        const offset = index * 0.5;
+        const intensity = 0.7 + Math.sin(this.time * 2 + offset) * 0.3;
+        edge.material.opacity = intensity;
+      });
+    }
 
     // Animate memory orbs with main museum floating motion
     this.orbs.forEach((orb, index) => {
@@ -3544,77 +3941,73 @@ export class DetailView {
       orb.light.position.y = floatY;
       // Sprites automatically face camera, no need for lookAt
       
-      // Update video frame if present
-      if (orb.videoElement && orb.videoElement.readyState >= orb.videoElement.HAVE_CURRENT_DATA) {
+      // Update video frame if present - optimize: only update every 3 frames (20fps for video) and cache gradients
+      if (orb.videoElement && orb.videoElement.readyState >= orb.videoElement.HAVE_CURRENT_DATA && Math.floor(this.time * 60) % 3 === 0) {
         // Draw current video frame to canvas with effects
         const canvas = orb.texture.image;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: false, alpha: true });
         
-        // Calculate dimensions
-        const sourceAspect = orb.videoElement.videoWidth / orb.videoElement.videoHeight;
-        let drawWidth, drawHeight, drawX, drawY;
-        
-        if (sourceAspect > 1) {
-          drawHeight = 512;
-          drawWidth = drawHeight * sourceAspect;
-          drawX = (512 - drawWidth) / 2;
-          drawY = 0;
-        } else {
-          drawWidth = 512;
-          drawHeight = drawWidth / sourceAspect;
-          drawX = 0;
-          drawY = (512 - drawHeight) / 2;
+        // Cache dimensions if not already cached
+        if (!orb.cachedDimensions) {
+          const sourceAspect = orb.videoElement.videoWidth / orb.videoElement.videoHeight;
+          if (sourceAspect > 1) {
+            orb.cachedDimensions = {
+              drawHeight: 512,
+              drawWidth: 512 * sourceAspect,
+              drawX: (512 - 512 * sourceAspect) / 2,
+              drawY: 0
+            };
+          } else {
+            orb.cachedDimensions = {
+              drawWidth: 512,
+              drawHeight: 512 / sourceAspect,
+              drawX: 0,
+              drawY: (512 - 512 / sourceAspect) / 2
+            };
+          }
         }
         
-        // Clear and redraw with effects
+        const { drawWidth, drawHeight, drawX, drawY } = orb.cachedDimensions;
+        
+        // Clear and redraw with effects - use single clip path
         ctx.clearRect(0, 0, 512, 512);
         ctx.save();
         ctx.beginPath();
         ctx.arc(256, 256, 256, 0, Math.PI * 2);
-        ctx.closePath();
         ctx.clip();
+        
+        // Draw video
         ctx.drawImage(orb.videoElement, drawX, drawY, drawWidth, drawHeight);
-        ctx.restore();
         
-        // Apply effects (overlay, vignette, highlight) - use orb's actual color
-        const colorData = { rgb: [247, 156, 0] }; // Amber yellow matching orb color
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(256, 256, 256, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.35)`;
+        // Apply color overlay
+        ctx.fillStyle = 'rgba(247, 156, 0, 0.35)';
         ctx.fillRect(0, 0, 512, 512);
-        ctx.restore();
         
-        const vignette = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-        vignette.addColorStop(0, 'transparent');
-        vignette.addColorStop(0.4, 'transparent');
-        vignette.addColorStop(0.6, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.25)`);
-        vignette.addColorStop(0.75, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.6)`);
-        vignette.addColorStop(0.88, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 0.9)`);
-        vignette.addColorStop(1, `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 1)`);
+        // Cache gradients if not already cached
+        if (!orb.cachedGradients) {
+          const vignette = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+          vignette.addColorStop(0, 'transparent');
+          vignette.addColorStop(0.4, 'transparent');
+          vignette.addColorStop(0.6, 'rgba(247, 156, 0, 0.25)');
+          vignette.addColorStop(0.75, 'rgba(247, 156, 0, 0.6)');
+          vignette.addColorStop(0.88, 'rgba(247, 156, 0, 0.9)');
+          vignette.addColorStop(1, 'rgba(247, 156, 0, 1)');
+          
+          const highlight = ctx.createRadialGradient(154, 154, 0, 154, 154, 180);
+          highlight.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+          highlight.addColorStop(0.7, 'transparent');
+          
+          orb.cachedGradients = { vignette, highlight };
+        }
         
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(256, 256, 256, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = vignette;
+        // Apply vignette
+        ctx.fillStyle = orb.cachedGradients.vignette;
         ctx.fillRect(0, 0, 512, 512);
-        ctx.restore();
         
-        const highlight = ctx.createRadialGradient(154, 154, 0, 154, 154, 180);
-        highlight.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-        highlight.addColorStop(0.7, 'transparent');
-        
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(256, 256, 256, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = highlight;
+        // Apply highlight
+        ctx.fillStyle = orb.cachedGradients.highlight;
         ctx.fillRect(0, 0, 512, 512);
+        
         ctx.restore();
         
         orb.texture.needsUpdate = true;

@@ -125,9 +125,9 @@
                         if (closeBtn) closeBtn.click();
                         
                         // Show detail view after panel closes
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             console.log('Showing detail view...');
-                            detailView.show(accentColor, portfolioItem);
+                            await detailView.show(accentColor, portfolioItem);
                         }, 400);
                     });
                     
