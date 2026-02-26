@@ -70,9 +70,15 @@ export class DetailView {
     this.createStarfield();
 
     // Create camera - position at entrance inside the T-shaped floor
+    // Dynamic FOV based on aspect ratio to maintain consistent view
+    const aspect = window.innerWidth / window.innerHeight;
+    const baseFOV = 50;
+    // Adjust FOV for different aspect ratios to prevent clipping
+    const fov = aspect < 1 ? baseFOV * (1 / aspect) * 0.75 : baseFOV;
+    
     this.camera = new THREE.PerspectiveCamera(
-      50, // Narrower FOV for less distortion
-      window.innerWidth / window.innerHeight,
+      fov,
+      aspect,
       0.1,
       1000
     );
@@ -2056,6 +2062,14 @@ export class DetailView {
     this.cameraRotation.y = 0;
     this.cameraVelocity.set(0, 0, 0);
     
+    // Update camera FOV for current screen size
+    const aspect = window.innerWidth / window.innerHeight;
+    const baseFOV = 50;
+    const fov = aspect < 1 ? baseFOV * (1 / aspect) * 0.75 : baseFOV;
+    this.camera.fov = fov;
+    this.camera.aspect = aspect;
+    this.camera.updateProjectionMatrix();
+    
     // Reset movement keys
     this.keys = { forward: false, backward: false, left: false, right: false };
 
@@ -2639,9 +2653,18 @@ export class DetailView {
     }, 10);
     
     // Create circular card container styled like a zoomed memory orb
+    // Calculate responsive modal size that leaves room for controls
+    // Reserve space: 80px for caption above, 150px for controls below
+    const availableHeight = window.innerHeight - 230;
+    const availableWidth = window.innerWidth * 0.85;
+    
     // Make it wider for videos to show more content
-    const modalSize = isVideo ? 'min(90vw, 800px)' : 'min(90vw, 90vh, 600px)';
-    const modalHeight = isVideo ? 'min(60vh, 600px)' : 'min(90vw, 90vh, 600px)';
+    const modalSize = isVideo 
+      ? `min(${availableWidth}px, 800px)` 
+      : `min(${availableWidth}px, ${availableHeight}px, 600px)`;
+    const modalHeight = isVideo 
+      ? `min(${availableHeight * 0.7}px, 600px)` 
+      : `min(${availableWidth}px, ${availableHeight}px, 600px)`;
     
     const card = document.createElement('div');
     card.className = 'memory-card';
@@ -2672,6 +2695,9 @@ export class DetailView {
       overflow: hidden;
     `;
     
+    // Store calculated size for later use
+    const calculatedSize = Math.min(availableWidth, availableHeight, 600);
+    
     // Caption - positioned outside above the modal
     const captionEl = document.createElement('h3');
     captionEl.textContent = caption;
@@ -2682,7 +2708,7 @@ export class DetailView {
       text-align: center;
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
       position: fixed;
-      top: calc(50% - min(90vw, 90vh, 600px) / 2 - 60px);
+      top: calc(50% - ${calculatedSize / 2}px - 60px);
       left: 50%;
       transform: translateX(-50%);
       z-index: 1001;
@@ -2948,18 +2974,18 @@ export class DetailView {
           
           // Restore caption position
           captionEl.style.transition = 'all 0.4s ease';
-          captionEl.style.top = `calc(50% - min(90vw, 90vh, 600px) / 2 - 60px)`;
+          captionEl.style.top = `calc(50% - ${calculatedSize / 2}px - 60px)`;
           
           // Restore navigation and close button positions
           if (card.navContainer) {
             card.navContainer.style.transition = 'all 0.4s ease';
-            card.navContainer.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 30px)`;
+            card.navContainer.style.top = `calc(50% + ${calculatedSize / 2}px + 30px)`;
           }
           closeBtn.style.transition = 'all 0.4s ease';
           if (hasMultipleImages) {
-            closeBtn.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 90px)`;
+            closeBtn.style.top = `calc(50% + ${calculatedSize / 2}px + 90px)`;
           } else {
-            closeBtn.style.top = `calc(50% + min(90vw, 90vh, 600px) / 2 + 90px)`;
+            closeBtn.style.top = `calc(50% + ${calculatedSize / 2}px + 90px)`;
           }
           
           fullViewBtn.textContent = '🔍 Full View';
@@ -2976,7 +3002,7 @@ export class DetailView {
       const navContainer = document.createElement('div');
       navContainer.style.cssText = `
         position: fixed;
-        top: calc(50% + min(90vw, 90vh, 600px) / 2 + 30px);
+        top: calc(50% + ${calculatedSize / 2}px + 30px);
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -3077,7 +3103,7 @@ export class DetailView {
       const navContainer = document.createElement('div');
       navContainer.style.cssText = `
         position: fixed;
-        top: calc(50% + min(90vw, 90vh, 600px) / 2 + 30px);
+        top: calc(50% + ${calculatedSize / 2}px + 30px);
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -3096,7 +3122,7 @@ export class DetailView {
     closeBtn.textContent = 'Close';
     closeBtn.style.cssText = `
       position: fixed;
-      top: calc(50% + min(90vw, 90vh, 600px) / 2 + 90px);
+      top: calc(50% + ${calculatedSize / 2}px + 90px);
       left: 50%;
       transform: translateX(-50%);
       padding: 0.75rem 2rem;
@@ -4141,7 +4167,14 @@ export class DetailView {
   onResize() {
     if (!this.camera || !this.renderer) return;
 
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = aspect;
+    
+    // Dynamically adjust FOV based on aspect ratio to maintain consistent view
+    const baseFOV = 50;
+    const fov = aspect < 1 ? baseFOV * (1 / aspect) * 0.75 : baseFOV;
+    this.camera.fov = fov;
+    
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
