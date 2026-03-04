@@ -20,10 +20,13 @@ export class DetailView {
     this.isActive = false;
     this.animationFrameId = null;
     this.time = 0;
+    this.frustum = new THREE.Frustum(); // For frustum culling
+    this.cameraViewProjectionMatrix = new THREE.Matrix4(); // For frustum culling
     
     // Camera controls
     this.cameraRotation = { x: 0, y: 0 };
     this.cameraVelocity = new THREE.Vector3();
+    this.cameraMovementEnabled = true; // Control camera movement (disabled during welcome screen)
     this.moveSpeed = 40; // Increased movement speed
     this.lookSpeed = 0.002;
     this.keys = { forward: false, backward: false, left: false, right: false };
@@ -82,7 +85,7 @@ export class DetailView {
       0.1,
       1000
     );
-    this.camera.position.set(0, 5, 30); // Spawn between entrance and first orbs
+    this.camera.position.set(0, 5, 45); // Spawn far back to see full entrance arc
     
     // Initialize camera rotation
     this.cameraRotation.x = 0; // Look straight ahead
@@ -254,6 +257,9 @@ export class DetailView {
     const bubbleName = this.portfolioData?.title || 'Memory';
     const titleText = `${bubbleName}'s Memory Hall`;
     this.createFloatingTitle(titleText, 0, 25, junctionZ - tBarLength - 4 + 10, this.originalAccentColor);
+    
+    // Create hologram platform as part of the Memory Hall structure
+    this.createHologramPlatform(this.originalAccentColor);
   }
 
   /**
@@ -1283,7 +1289,7 @@ export class DetailView {
     group.add(baseMesh);
     
     // Create particle system for rising particles in inverted cone shape
-    const particleCount = 50;
+    const particleCount = 30; // Reduced from 50 for better performance
     const particles = [];
     
     // Create particle texture
@@ -1421,7 +1427,7 @@ export class DetailView {
    * Create flowing particles along the entrance arc
    */
   createArcParticles(curve, entranceZ) {
-    const particleCount = 30;
+    const particleCount = 15; // Reduced from 30 for better performance
     const particles = [];
     const tubeRadius = 0.4; // Offset from tube surface
     
@@ -2044,6 +2050,32 @@ export class DetailView {
   }
 
   /**
+   * Create hologram platform as part of Memory Hall structure (platform only)
+   */
+  createHologramPlatform(accentColor) {
+    const hologramX = -6;
+    const hologramZ = 16;
+    const platformRadius = 1.4;
+    const platformY = 0.2;
+    
+    // Create platform only - beam/ring/light created when chibi appears
+    const platformGeometry = new THREE.CylinderGeometry(platformRadius, platformRadius, 0.2, 32);
+    const platformMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(accentColor),
+      emissive: new THREE.Color(accentColor),
+      emissiveIntensity: 0.8,
+      metalness: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.9
+    });
+    
+    this.welcomePlatform = new THREE.Mesh(platformGeometry, platformMaterial);
+    this.welcomePlatform.position.set(hologramX, platformY, hologramZ);
+    this.scene.add(this.welcomePlatform);
+  }
+
+  /**
    * Show the detail view with loading screen
    */
   async show(accentColor, portfolioData = null) {
@@ -2057,7 +2089,7 @@ export class DetailView {
     this.cleanupSceneContent();
 
     // Reset camera position and rotation
-    this.camera.position.set(0, 5, 30); // Spawn between entrance and first orbs
+    this.camera.position.set(0, 5, 45); // Spawn far back to see full entrance arc
     this.cameraRotation.x = 0; // Look straight ahead, not down
     this.cameraRotation.y = 0;
     this.cameraVelocity.set(0, 0, 0);
@@ -2148,131 +2180,375 @@ export class DetailView {
     // Add controls
     this.addControls();
     
-    // Show welcome text 2 seconds after loading Memory Hall
-    setTimeout(() => {
-      this.showWelcomeText();
-    }, 1000);
-    
     this.animate();
+    
+    // Show chibi welcome screen immediately (platform visible right away)
+    this.showChibiWelcome();
     
     console.log('DetailView shown successfully');
   }
 
   /**
-   * Show flashing welcome text when entering memory hall
+   * Show 3D hologram welcome with chibi avatar and speech bubble
    */
-  showWelcomeText() {
-    // Use original accent color (not the darker floor color)
-    const accentColorHex = this.originalAccentColor ? this.originalAccentColor.getHexString() : 'FFD700';
-    const r = parseInt(accentColorHex.slice(0, 2), 16);
-    const g = parseInt(accentColorHex.slice(2, 4), 16);
-    const b = parseInt(accentColorHex.slice(4, 6), 16);
+  showChibiWelcome() {
+    const folder = this.portfolioData?.folder;
+    if (!folder) return;
     
-    // Use requestAnimationFrame to avoid blocking the render loop
-    requestAnimationFrame(() => {
-      // Create dark overlay to focus attention
-      const darkOverlay = document.createElement('div');
-      darkOverlay.id = 'welcome-dark-overlay';
-      darkOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 249;
-        pointer-events: none;
-        will-change: opacity;
-        animation: fadeOverlay 3s ease-in-out;
-      `;
-      
-      // Create welcome container with blurred background (no border)
-      const welcomeContainer = document.createElement('div');
-      welcomeContainer.id = 'welcome-container';
-      welcomeContainer.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 250;
-        text-align: center;
-        pointer-events: none;
-        will-change: transform, opacity;
-        animation: scaleContainer 3s ease-in-out;
-      `;
-      
-      // Create welcome text with optimized shadows
-      const welcomeText = document.createElement('div');
-      const portfolioName = this.portfolioData?.title || 'Memory';
-      welcomeText.textContent = `Welcome to ${portfolioName}'s Memory Hall!`;
-      welcomeText.style.cssText = `
-        font-size: 3rem;
-        font-weight: bold;
-        color: white;
-        text-shadow: 
-          0 0 20px rgba(${r}, ${g}, ${b}, 1),
-          0 0 40px rgba(${r}, ${g}, ${b}, 0.6),
-          2px 2px 4px rgba(0, 0, 0, 0.8);
-        animation: flashWelcome 3s ease-in-out;
-        white-space: nowrap;
-        will-change: opacity;
-      `;
-      
-      welcomeContainer.appendChild(welcomeText);
-      this.container.appendChild(darkOverlay);
-      this.container.appendChild(welcomeContainer);
-      
-      // Add CSS animations only once
-      if (!document.querySelector('#welcome-animation-style')) {
-        const style = document.createElement('style');
-        style.id = 'welcome-animation-style';
-        style.textContent = `
-          @keyframes fadeOverlay {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; }
-          }
-          
-          @keyframes scaleContainer {
-            0% {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(0.9);
-            }
-            15% {
-              opacity: 1;
-              transform: translate(-50%, -50%) scale(1);
-            }
-            70% {
-              opacity: 1;
-              transform: translate(-50%, -50%) scale(1);
-            }
-            100% {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(1);
-            }
-          }
-          
-          @keyframes flashWelcome {
-            0% { opacity: 0; }
-            15% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; }
-          }
-        `;
-        document.head.appendChild(style);
+    // Remove any existing welcome hologram sprite only (platform is part of floor now)
+    if (this.welcomeHologram) {
+      this.scene.remove(this.welcomeHologram);
+      if (this.welcomeHologram.material) {
+        this.welcomeHologram.material.dispose();
+        if (this.welcomeHologram.material.map) {
+          this.welcomeHologram.material.map.dispose();
+        }
       }
-      
-      // Remove welcome elements after animation (3 seconds)
-      setTimeout(() => {
-        if (darkOverlay && darkOverlay.parentNode) {
-          darkOverlay.remove();
+      if (this.welcomeHologram.geometry) {
+        this.welcomeHologram.geometry.dispose();
+      }
+      this.welcomeHologram = null;
+    }
+    
+    // Use portfolio folder name as the chibi filename
+    const chibiPath = `assets/portfolios/${folder}/chibi_avatar/${folder}.png`;
+    const portfolioName = this.portfolioData?.title || 'Memory';
+    const accentColor = this.portfolioData?.color || '#FF1493';
+    
+    // Platform is already created as part of the floor in createHologramPlatform()
+    const hologramX = -6;
+    const hologramY = 6.5;
+    const hologramZ = 16;
+    const platformRadius = 1.4;
+    const platformY = 0.2;
+    
+    // Create beam, ring, and light (platform already exists)
+    const beamHeight = 3;
+    const beamGeometry = new THREE.ConeGeometry(platformRadius * 1.2, beamHeight, 32, 16, false);
+    const beamMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(accentColor) }
+      },
+      vertexShader: `
+        varying float vHeight;
+        void main() {
+          vHeight = position.y;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
-        if (welcomeContainer && welcomeContainer.parentNode) {
-          welcomeContainer.remove();
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        varying float vHeight;
+        void main() {
+          float alpha = smoothstep(-1.5, 1.5, vHeight);
+          gl_FragColor = vec4(color, alpha * 0.8);
         }
-      }, 3000);
+      `,
+      transparent: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
+    
+    this.welcomeBeam = new THREE.Mesh(beamGeometry, beamMaterial);
+    this.welcomeBeam.rotation.x = Math.PI;
+    this.welcomeBeam.position.set(hologramX, platformY + beamHeight / 2 + 0.3, hologramZ);
+    this.welcomeBeam.renderOrder = 1;
+    this.scene.add(this.welcomeBeam);
+    
+    // Create ring
+    const ringGeometry = new THREE.RingGeometry(platformRadius - 0.1, platformRadius + 0.1, 32);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(accentColor),
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide
+    });
+    
+    this.welcomeRing = new THREE.Mesh(ringGeometry, ringMaterial);
+    this.welcomeRing.rotation.x = -Math.PI / 2;
+    this.welcomeRing.position.set(hologramX, platformY + 0.1, hologramZ);
+    this.scene.add(this.welcomeRing);
+    
+    // Create light
+    this.welcomePlatformLight = new THREE.PointLight(new THREE.Color(accentColor), 3, 20);
+    this.welcomePlatformLight.position.set(hologramX, platformY + 0.3, hologramZ);
+    this.scene.add(this.welcomePlatformLight);
+    
+    // Create canvas for hologram texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 768;
+    const ctx = canvas.getContext('2d');
+    
+    // Load chibi image
+    const chibiImage = new Image();
+    chibiImage.crossOrigin = 'anonymous';
+    chibiImage.onload = () => {
+      // Clear canvas with fully transparent background
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Reset all context settings to defaults
+      ctx.globalAlpha = 1.0;
+      ctx.globalCompositeOperation = 'source-over';
+      
+      // Center everything on canvas for proper billboard effect
+      const chibiSize = 350;
+      const chibiX = (canvas.width - chibiSize) / 2; // Center horizontally
+      const chibiY = canvas.height - chibiSize - 100; // Leave space for name below
+      ctx.drawImage(chibiImage, chibiX, chibiY, chibiSize, chibiSize);
+      
+      // Draw portfolio name below chibi (centered with glowing white border)
+      ctx.font = 'bold 45px Arial Black';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
+      const nameX = canvas.width / 2; // Center of canvas
+      const nameY = chibiY + chibiSize - 15; // Even closer to chibi
+      
+      // Draw glowing white border (multiple layers for stronger glow)
+      ctx.shadowColor = 'white';
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(portfolioName.toUpperCase(), nameX, nameY);
+      
+      // Additional glow layer
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 2;
+      ctx.strokeText(portfolioName.toUpperCase(), nameX, nameY);
+      
+      // Reset shadow for fill
+      ctx.shadowBlur = 0;
+      
+      // Draw colored fill on top
+      ctx.fillStyle = accentColor;
+      ctx.fillText(portfolioName.toUpperCase(), nameX, nameY);
+      
+      // Speech bubble will be drawn later during animation
+      
+      // Create texture and sprite
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0,
+        depthTest: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        toneMapped: false
+      });
+      
+      this.welcomeHologram = new THREE.Sprite(material);
+      
+      // Position hologram on the floor like a welcome staff/bot (left side of entrance)
+      const hologramX = -6;
+      const hologramY = 6.5;
+      const hologramZ = 16;
+      this.welcomeHologram.position.set(hologramX, hologramY, hologramZ);
+      this.welcomeHologram.scale.set(14, 10.5, 1);
+      
+      this.scene.add(this.welcomeHologram);
+      
+      // Store canvas and context for redrawing with speech bubble
+      const canvasRef = canvas;
+      const ctxRef = ctx;
+      let speechBubbleDrawn = false;
+      let bubbleCanvas = null;
+      
+      // Save the base canvas (chibi + name) before any modifications
+      const baseCanvas = document.createElement('canvas');
+      baseCanvas.width = canvas.width;
+      baseCanvas.height = canvas.height;
+      const baseCtx = baseCanvas.getContext('2d');
+      baseCtx.drawImage(canvas, 0, 0);
+      
+      // Function to draw speech bubble on a separate canvas (drawn once)
+      const createSpeechBubbleCanvas = () => {
+        if (bubbleCanvas) return bubbleCanvas;
+        
+        bubbleCanvas = document.createElement('canvas');
+        bubbleCanvas.width = canvasRef.width;
+        bubbleCanvas.height = canvasRef.height;
+        const bubbleCtx = bubbleCanvas.getContext('2d');
+        
+        // Draw speech bubble above chibi (centered)
+        const bubbleWidth = 400;
+        const bubbleHeight = 180;
+        const bubbleX = (bubbleCanvas.width - bubbleWidth) / 2;
+        const bubbleY = 120;
+        const bubbleRadius = 20;
+        const tailSize = 30;
+        
+        // Draw frosted glass effect background
+        bubbleCtx.fillStyle = 'rgba(0, 20, 40, 0.7)';
+        this.roundRect(bubbleCtx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, bubbleRadius);
+        bubbleCtx.fill();
+        
+        // Add subtle inner glow for depth
+        bubbleCtx.fillStyle = 'rgba(0, 40, 80, 0.3)';
+        this.roundRect(bubbleCtx, bubbleX + 2, bubbleY + 2, bubbleWidth - 4, bubbleHeight - 4, bubbleRadius - 2);
+        bubbleCtx.fill();
+        
+        // Enhanced glowing border effect (multiple layers for stronger glow)
+        // Outer glow
+        bubbleCtx.strokeStyle = accentColor;
+        bubbleCtx.lineWidth = 4;
+        bubbleCtx.shadowColor = accentColor;
+        bubbleCtx.shadowBlur = 30;
+        this.roundRect(bubbleCtx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, bubbleRadius);
+        bubbleCtx.stroke();
+        
+        // Middle glow
+        bubbleCtx.lineWidth = 3;
+        bubbleCtx.shadowBlur = 20;
+        this.roundRect(bubbleCtx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, bubbleRadius);
+        bubbleCtx.stroke();
+        
+        // Inner glow
+        bubbleCtx.strokeStyle = accentColor;
+        bubbleCtx.lineWidth = 2;
+        bubbleCtx.shadowBlur = 15;
+        this.roundRect(bubbleCtx, bubbleX + 5, bubbleY + 5, bubbleWidth - 10, bubbleHeight - 10, bubbleRadius - 5);
+        bubbleCtx.stroke();
+        
+        // Reset shadow for tail
+        bubbleCtx.shadowBlur = 0;
+        
+        // Bubble tail (pointing to chibi) with enhanced glow - centered
+        const tailCenterX = bubbleX + bubbleWidth / 2;
+        bubbleCtx.beginPath();
+        bubbleCtx.moveTo(tailCenterX - 50, bubbleY + bubbleHeight);
+        bubbleCtx.lineTo(tailCenterX, bubbleY + bubbleHeight + tailSize);
+        bubbleCtx.lineTo(tailCenterX + 50, bubbleY + bubbleHeight);
+        bubbleCtx.closePath();
+        bubbleCtx.fillStyle = 'rgba(0, 40, 80, 0.3)';
+        bubbleCtx.fill();
+        
+        // Enhanced tail glow
+        bubbleCtx.strokeStyle = accentColor;
+        bubbleCtx.lineWidth = 4;
+        bubbleCtx.shadowColor = accentColor;
+        bubbleCtx.shadowBlur = 30;
+        bubbleCtx.stroke();
+        
+        // Additional tail glow layer
+        bubbleCtx.lineWidth = 3;
+        bubbleCtx.shadowBlur = 20;
+        bubbleCtx.stroke();
+        
+        // Reset shadow for text
+        bubbleCtx.shadowBlur = 0;
+        
+        // Draw welcome text in bubble
+        const fullText = `${portfolioName}'s Memory Hall!`;
+        let fontSize = 26;
+        
+        if (fullText.length > 25) {
+          fontSize = 22;
+        } else if (fullText.length > 20) {
+          fontSize = 24;
+        }
+        
+        bubbleCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        bubbleCtx.font = `bold ${fontSize}px Courier New`;
+        bubbleCtx.textAlign = 'center';
+        bubbleCtx.textBaseline = 'middle';
+        
+        const titleX = bubbleX + bubbleWidth / 2;
+        const centerY = bubbleY + bubbleHeight / 2;
+        bubbleCtx.fillText(`Welcome to`, titleX, centerY - 30);
+        bubbleCtx.fillText(fullText, titleX, centerY + 30);
+        
+        return bubbleCanvas;
+      };
+      
+      // Function to composite speech bubble with fade
+      let lastBubbleAlpha = -1;
+      const drawWithBubbleFade = (bubbleAlpha) => {
+        // Only redraw if alpha changed significantly (reduce updates)
+        if (Math.abs(bubbleAlpha - lastBubbleAlpha) < 0.05 && lastBubbleAlpha >= 0) {
+          return;
+        }
+        lastBubbleAlpha = bubbleAlpha;
+        
+        // Clear and redraw base (chibi + name from saved base canvas)
+        ctxRef.clearRect(0, 0, canvasRef.width, canvasRef.height);
+        ctxRef.drawImage(baseCanvas, 0, 0);
+        
+        // Draw speech bubble with alpha
+        if (bubbleAlpha > 0) {
+          const bubble = createSpeechBubbleCanvas();
+          ctxRef.globalAlpha = bubbleAlpha;
+          ctxRef.drawImage(bubble, 0, 0);
+          ctxRef.globalAlpha = 1.0;
+        }
+        
+        texture.needsUpdate = true;
+      };
+      
+      // Animate hologram appearance in sequence: chibi+name first, then speech bubble fades in
+      const startTime = this.time;
+      const chibiDuration = 0.8; // Chibi+name fade in over 0.8s
+      const bubbleDelay = 1.8; // Bubble appears 1.8s after chibi starts
+      const bubbleDuration = 0.6; // Bubble fades in over 0.6s
+      
+      this.welcomeHologramAnimation = () => {
+        const elapsed = this.time - startTime;
+        
+        // Phase 1: Fade in chibi and name (0 to chibiDuration)
+        if (elapsed < chibiDuration) {
+          const chibiProgress = elapsed / chibiDuration;
+          this.welcomeHologram.material.opacity = chibiProgress;
+        }
+        // Phase 2: Chibi+name fully visible, wait for bubble delay
+        else if (elapsed < bubbleDelay) {
+          this.welcomeHologram.material.opacity = 1.0;
+        }
+        // Phase 3: Fade in speech bubble
+        else if (elapsed < bubbleDelay + bubbleDuration) {
+          const bubbleProgress = (elapsed - bubbleDelay) / bubbleDuration;
+          drawWithBubbleFade(bubbleProgress);
+          this.welcomeHologram.material.opacity = 1.0;
+        }
+        // Phase 4: Everything fully visible
+        else {
+          if (!speechBubbleDrawn) {
+            drawWithBubbleFade(1.0);
+            speechBubbleDrawn = true;
+          }
+          this.welcomeHologram.material.opacity = 1.0;
+          this.welcomeHologramAnimation = null;
+        }
+      };
+    };
+    
+    chibiImage.onerror = () => {
+      console.warn('Failed to load chibi image:', chibiPath);
+    };
+    
+    chibiImage.src = chibiPath;
+  }
+  
+  /**
+   * Helper function to draw rounded rectangle
+   */
+  roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
   }
 
   /**
@@ -2444,6 +2720,73 @@ export class DetailView {
       if (this.floor.geometry) this.floor.geometry.dispose();
       if (this.floor.material) this.floor.material.dispose();
       this.floor = null;
+    }
+    
+    // Remove welcome hologram and platform
+    if (this.welcomeHologram) {
+      this.scene.remove(this.welcomeHologram);
+      if (this.welcomeHologram.material) {
+        this.welcomeHologram.material.dispose();
+        if (this.welcomeHologram.material.map) {
+          this.welcomeHologram.material.map.dispose();
+        }
+      }
+      if (this.welcomeHologram.geometry) {
+        this.welcomeHologram.geometry.dispose();
+      }
+      this.welcomeHologram = null;
+    }
+    
+    if (this.welcomePlatform) {
+      this.scene.remove(this.welcomePlatform);
+      if (this.welcomePlatform.geometry) this.welcomePlatform.geometry.dispose();
+      if (this.welcomePlatform.material) this.welcomePlatform.material.dispose();
+      this.welcomePlatform = null;
+    }
+    
+    if (this.welcomeBeam) {
+      this.scene.remove(this.welcomeBeam);
+      if (this.welcomeBeam.geometry) this.welcomeBeam.geometry.dispose();
+      if (this.welcomeBeam.material) {
+        if (this.welcomeBeam.material.uniforms) {
+          Object.values(this.welcomeBeam.material.uniforms).forEach(uniform => {
+            if (uniform.value && uniform.value.dispose) {
+              uniform.value.dispose();
+            }
+          });
+        }
+        this.welcomeBeam.material.dispose();
+      }
+      this.welcomeBeam = null;
+    }
+    
+    if (this.welcomeRing) {
+      this.scene.remove(this.welcomeRing);
+      if (this.welcomeRing.geometry) this.welcomeRing.geometry.dispose();
+      if (this.welcomeRing.material) this.welcomeRing.material.dispose();
+      this.welcomeRing = null;
+    }
+    
+    if (this.welcomePlatformLight) {
+      this.scene.remove(this.welcomePlatformLight);
+      this.welcomePlatformLight = null;
+    }
+    
+    // Clear welcome hologram animation
+    if (this.welcomeHologramAnimation) {
+      this.welcomeHologramAnimation = null;
+    }
+    
+    if (this.welcomeRing) {
+      this.scene.remove(this.welcomeRing);
+      if (this.welcomeRing.geometry) this.welcomeRing.geometry.dispose();
+      if (this.welcomeRing.material) this.welcomeRing.material.dispose();
+      this.welcomeRing = null;
+    }
+    
+    if (this.welcomePlatformLight) {
+      this.scene.remove(this.welcomePlatformLight);
+      this.welcomePlatformLight = null;
     }
 
     // Remove all lights from previous hall
@@ -3709,6 +4052,9 @@ export class DetailView {
    */
   onMouseMove(event) {
     if (!this.isMouseDown) return;
+    
+    // Don't allow mouse rotation if camera movement is disabled
+    if (this.cameraMovementEnabled === false) return;
 
     const deltaX = event.clientX - this.lastMouseX;
     const deltaY = event.clientY - this.lastMouseY;
@@ -3762,6 +4108,11 @@ export class DetailView {
    * Update camera based on controls
    */
   updateCamera(deltaTime) {
+    // Don't update camera if movement is disabled (e.g., during welcome screen)
+    if (this.cameraMovementEnabled === false) {
+      return;
+    }
+    
     // Update camera rotation
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.y = this.cameraRotation.y;
@@ -3884,6 +4235,12 @@ export class DetailView {
    * Hide the detail view
    */
   hide() {
+    // Remove any existing welcome screen
+    const existingWelcome = document.getElementById('floating-welcome');
+    if (existingWelcome) {
+      existingWelcome.remove();
+    }
+    
     // Create fade overlay for smooth transition out
     const fadeOverlay = document.createElement('div');
     fadeOverlay.style.cssText = `
@@ -3942,6 +4299,16 @@ export class DetailView {
 
     // Update camera controls
     this.updateCamera(deltaTime);
+    
+    // Update frustum for culling (only update every 3 frames for performance)
+    if (Math.floor(this.time * 60) % 3 === 0) {
+      this.camera.updateMatrixWorld();
+      this.cameraViewProjectionMatrix.multiplyMatrices(
+        this.camera.projectionMatrix,
+        this.camera.matrixWorldInverse
+      );
+      this.frustum.setFromProjectionMatrix(this.cameraViewProjectionMatrix);
+    }
 
     // Animate edge glow (skip door edges - they should be static)
     // Optimize: Only update every other frame for edge glow
@@ -3957,18 +4324,24 @@ export class DetailView {
       });
     }
 
-    // Animate memory orbs with main museum floating motion
+    // Animate memory orbs with frustum culling - only update visible orbs
     this.orbs.forEach((orb, index) => {
-      const offset = index * 0.3;
-      // Gentle floating motion matching main museum (translateY(-20px) at 50%)
-      const floatY = orb.baseY + Math.sin(this.time * 1.5 + offset) * 0.4;
-      orb.mesh.position.y = floatY;
-      orb.glowRing.position.y = floatY;
-      orb.light.position.y = floatY;
-      // Sprites automatically face camera, no need for lookAt
+      // Check if orb is in camera frustum
+      const isVisible = this.frustum.intersectsObject(orb.mesh);
+      
+      // Only animate visible orbs
+      if (isVisible) {
+        const offset = index * 0.3;
+        // More subtle floating motion for better performance (reduced from 0.4 to 0.2)
+        const floatY = orb.baseY + Math.sin(this.time * 1.5 + offset) * 0.2;
+        orb.mesh.position.y = floatY;
+        orb.glowRing.position.y = floatY;
+        orb.light.position.y = floatY;
+        // Sprites automatically face camera, no need for lookAt
+      }
       
       // Update video frame if present - optimize: only update every 3 frames (20fps for video) and cache gradients
-      if (orb.videoElement && orb.videoElement.readyState >= orb.videoElement.HAVE_CURRENT_DATA && Math.floor(this.time * 60) % 3 === 0) {
+      if (isVisible && orb.videoElement && orb.videoElement.readyState >= orb.videoElement.HAVE_CURRENT_DATA && Math.floor(this.time * 60) % 3 === 0) {
         // Draw current video frame to canvas with effects
         const canvas = orb.texture.image;
         const ctx = canvas.getContext('2d', { willReadFrequently: false, alpha: true });
@@ -4155,6 +4528,11 @@ export class DetailView {
         // Fade out as approaching center
         particle.sprite.material.opacity = 1 - particle.progress;
       });
+    }
+    
+    // Animate welcome hologram
+    if (this.welcomeHologramAnimation) {
+      this.welcomeHologramAnimation();
     }
 
     // Render
@@ -4346,6 +4724,60 @@ export class DetailView {
         if (edge.material) edge.material.dispose();
       });
       this.edges = [];
+    }
+    
+    // Cleanup welcome hologram and platform components
+    if (this.welcomeHologram) {
+      this.scene.remove(this.welcomeHologram);
+      if (this.welcomeHologram.material) {
+        this.welcomeHologram.material.dispose();
+        if (this.welcomeHologram.material.map) {
+          this.welcomeHologram.material.map.dispose();
+        }
+      }
+      if (this.welcomeHologram.geometry) {
+        this.welcomeHologram.geometry.dispose();
+      }
+      this.welcomeHologram = null;
+    }
+    
+    if (this.welcomePlatform) {
+      this.scene.remove(this.welcomePlatform);
+      if (this.welcomePlatform.geometry) this.welcomePlatform.geometry.dispose();
+      if (this.welcomePlatform.material) this.welcomePlatform.material.dispose();
+      this.welcomePlatform = null;
+    }
+    
+    if (this.welcomeBeam) {
+      this.scene.remove(this.welcomeBeam);
+      if (this.welcomeBeam.geometry) this.welcomeBeam.geometry.dispose();
+      if (this.welcomeBeam.material) {
+        if (this.welcomeBeam.material.uniforms) {
+          Object.values(this.welcomeBeam.material.uniforms).forEach(uniform => {
+            if (uniform.value && uniform.value.dispose) {
+              uniform.value.dispose();
+            }
+          });
+        }
+        this.welcomeBeam.material.dispose();
+      }
+      this.welcomeBeam = null;
+    }
+    
+    if (this.welcomeRing) {
+      this.scene.remove(this.welcomeRing);
+      if (this.welcomeRing.geometry) this.welcomeRing.geometry.dispose();
+      if (this.welcomeRing.material) this.welcomeRing.material.dispose();
+      this.welcomeRing = null;
+    }
+    
+    if (this.welcomePlatformLight) {
+      this.scene.remove(this.welcomePlatformLight);
+      this.welcomePlatformLight = null;
+    }
+    
+    if (this.welcomeHologramAnimation) {
+      this.welcomeHologramAnimation = null;
     }
     
     // Cleanup all lights in scene
