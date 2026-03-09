@@ -627,9 +627,16 @@ export class DetailView {
     const orbRadius = 3.0; // Increased size (was 2.5)
     const orbHeight = 4.5; // Raised higher
 
-    // Amber yellow color for all orbs
-    const colors = [
-      { hex: 0xF79C00, rgb: [247, 156, 0] } // Amber yellow
+    // Amber yellow color for corridor orbs
+    const corridorColor = { hex: 0xF79C00, rgb: [247, 156, 0] }; // Amber yellow
+    
+    // Multiple colors for ring orbs - more vibrant and saturated
+    const ringColors = [
+      { hex: 0x0066FF, rgb: [0, 102, 255] },     // Pure Blue
+      { hex: 0x00FF66, rgb: [0, 255, 102] },     // Pure Green
+      { hex: 0xFF0099, rgb: [255, 0, 153] },     // Pure Pink
+      { hex: 0xCE2029, rgb: [206, 32, 41] },     // Fire Engine Red
+      { hex: 0x9900FF, rgb: [153, 0, 255] }      // Pure Purple
     ];
 
     const mainHalfWidth = mainWidth / 2;
@@ -650,14 +657,24 @@ export class DetailView {
 
     // Helper to create glassmorphism orb with portfolio image
     const createOrb = (x, y, z, rotationY, isRingOrb = false) => {
-      // Select a color different from the last one
-      let colorIndex;
-      do {
-        colorIndex = Math.floor(Math.random() * colors.length);
-      } while (colorIndex === lastColorIndex && colors.length > 1);
+      // Select color based on orb type
+      let colorData;
       
-      lastColorIndex = colorIndex;
-      const colorData = colors[colorIndex];
+      if (isRingOrb) {
+        // For ring orbs, use one of the 5 colors, avoiding adjacent duplicates
+        let colorIndex;
+        do {
+          colorIndex = Math.floor(Math.random() * ringColors.length);
+        } while (colorIndex === lastColorIndex && ringColors.length > 1);
+        
+        lastColorIndex = colorIndex;
+        colorData = ringColors[colorIndex];
+      } else {
+        // For corridor orbs, always use amber yellow
+        colorData = corridorColor;
+        lastColorIndex = -1; // Reset for next ring orb
+      }
+      
       const currentOrbIndex = orbIndex++;
       
       // Get media path for this orb (try video first, then images for slideshow)
@@ -761,7 +778,7 @@ export class DetailView {
         ctx.fillRect(0, 0, 512, 512);
         ctx.restore();
         
-        // Add inner border - darker gold for visible outline inside the circle
+        // Add inner border - uses the orb's color for visible outline inside the circle
         ctx.save();
         ctx.beginPath();
         ctx.arc(256, 256, 256, 0, Math.PI * 2);
@@ -771,7 +788,7 @@ export class DetailView {
         // Draw inner border by stroking a slightly smaller circle
         ctx.beginPath();
         ctx.arc(256, 256, 251, 0, Math.PI * 2); // Smaller radius for inner border
-        ctx.strokeStyle = 'rgba(247, 140, 0, 1)'; // Amber yellow, fully opaque
+        ctx.strokeStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 1)`; // Use orb's color
         ctx.lineWidth = 10; // Thicker to ensure visibility inside
         ctx.stroke();
         ctx.restore();
@@ -941,7 +958,7 @@ export class DetailView {
               ctx.clip();
               ctx.beginPath();
               ctx.arc(256, 256, 251, 0, Math.PI * 2);
-              ctx.strokeStyle = 'rgba(247, 140, 0, 1)';
+              ctx.strokeStyle = `rgba(${colorData.rgb[0]}, ${colorData.rgb[1]}, ${colorData.rgb[2]}, 1)`; // Use orb's color
               ctx.lineWidth = 10;
               ctx.stroke();
               ctx.restore();
