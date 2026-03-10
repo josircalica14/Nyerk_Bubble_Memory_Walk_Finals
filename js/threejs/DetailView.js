@@ -2247,6 +2247,9 @@ export class DetailView {
   async show(accentColor, portfolioData = null) {
     console.log('DetailView.show called with:', accentColor, portfolioData);
     
+    // Store portfolio data for returning to correct position
+    this.currentPortfolio = portfolioData;
+    
     if (!this.container) {
       this.init();
     }
@@ -2273,72 +2276,53 @@ export class DetailView {
 
     this.portfolioData = portfolioData;
     
-    // Create and show loading screen with animations
-    const loadingScreen = new LoadingScreen(accentColor);
-    loadingScreen.show();
+    // Create white fade overlay for transition
+    const fadeOverlay = document.createElement('div');
+    fadeOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+      pointer-events: none;
+    `;
+    document.body.appendChild(fadeOverlay);
     
-    // Keep container hidden during loading
-    this.container.style.display = 'none';
-    this.container.style.opacity = '0';
+    // Fade to white
+    setTimeout(() => {
+      fadeOverlay.style.opacity = '1';
+    }, 10);
     
-    // Simulate loading progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-      progress += Math.random() * 10;
-      if (progress > 85) progress = 85;
-      loadingScreen.setProgress(progress);
-    }, 150);
+    // Wait for fade to complete
+    await new Promise(resolve => setTimeout(resolve, 900));
     
-    // Load memory hall assets - extended timing
-    await new Promise(resolve => setTimeout(resolve, 800));
-    loadingScreen.setProgress(30);
-    
+    // Load memory hall assets while white
     this.createLollipopFloor(accentColor);
-    loadingScreen.setProgress(70);
     
-    await new Promise(resolve => setTimeout(resolve, 600));
-    loadingScreen.setProgress(100);
-    
-    clearInterval(progressInterval);
-    
-    // Set isActive FIRST so animations will run
+    // Set isActive and show container
     this.isActive = true;
-    
-    // Show Memory Hall container NOW (while loading screen is still at 100%)
     this.container.style.display = 'block';
-    this.container.style.opacity = '1'; // Memory Hall is fully visible
-    this.container.style.transition = 'none';
-    this.container.style.zIndex = '9998'; // Just below loading screen
+    this.container.style.opacity = '1';
+    this.container.style.zIndex = '200';
     
-    // CRITICAL: Force browser to render Memory Hall by triggering reflow
-    this.container.offsetHeight; // Force reflow
-    
-    // Start animation loop - animations will now run because isActive is true
+    // Start animation loop
     this.animate();
     
-    // Wait for Memory Hall to fully render
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Wait a moment for rendering
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Wait at 100% to show completion
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Fade from white to reveal memory hall - smoother and slower
+    fadeOverlay.style.transition = 'opacity 1.5s cubic-bezier(0.4, 0.0, 0.2, 1)';
+    fadeOverlay.style.opacity = '0';
     
-    // Fade loading screen animations to black (keep black background)
-    await loadingScreen.fadeToBlack();
-    
-    // Hold on solid black screen before transitioning
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Now fade out the loading screen (black overlay) to reveal Memory Hall underneath
-    // Using longer duration and cubic-bezier for smoother, more elegant fade
-    if (loadingScreen.container) {
-      loadingScreen.container.style.transition = 'opacity 1.5s cubic-bezier(0.4, 0.0, 0.2, 1)';
-      loadingScreen.container.style.opacity = '0';
-    }
-    
-    // Wait for fade to complete, then cleanup loading screen and restore z-index
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    this.container.style.zIndex = '200'; // Restore original z-index
-    await loadingScreen.hide();
+    // Remove overlay after fade completes
+    setTimeout(() => {
+      fadeOverlay.remove();
+    }, 1500);
     
     // Add back button
     this.createBackButton();
@@ -4464,6 +4448,14 @@ export class DetailView {
         this.container.style.display = 'none';
       }
       
+      // Dispatch event to notify main museum to position camera at orb
+      // Dispatch immediately so camera is positioned before fade completes
+      if (this.currentPortfolio) {
+        window.dispatchEvent(new CustomEvent('returnToMainMuseum', { 
+          detail: { portfolio: this.currentPortfolio } 
+        }));
+      }
+      
       // Fade out overlay to reveal main museum
       setTimeout(() => {
         fadeOverlay.style.opacity = '0';
@@ -4779,19 +4771,38 @@ export class DetailView {
           orb.videoElement.pause();
           orb.videoElement.src = '';
           orb.videoElement.load();
+          orb.videoElement = null;
         }
         
         // Dispose resources
         if (orb.mesh.geometry) orb.mesh.geometry.dispose();
-        if (orb.mesh.material) orb.mesh.material.dispose();
-        if (orb.texture) orb.texture.dispose();
+        if (orb.mesh.material) {
+          if (orb.mesh.material.map) orb.mesh.material.map.dispose();
+          orb.mesh.material.dispose();
+        }
+        if (orb.texture) {
+          orb.texture.dispose();
+          orb.texture = null;
+        }
         
         if (orb.glowRing) {
           if (orb.glowRing.geometry) orb.glowRing.geometry.dispose();
-          if (orb.glowRing.material) orb.glowRing.material.dispose();
+          if (orb.glowRing.material) {
+            if (orb.glowRing.material.map) orb.glowRing.material.map.dispose();
+            orb.glowRing.material.dispose();
+          }
         }
         
         if (orb.platform) {
+          // Clean up platform particles
+          if (orb.platform.userData && orb.platform.userData.particles) {
+            orb.platform.userData.particles.forEach(particle => {
+              if (particle.geometry) particle.geometry.dispose();
+              if (particle.material) particle.material.dispose();
+            });
+            orb.platform.userData.particles = [];
+          }
+          
           orb.platform.traverse((child) => {
             if (child.geometry) child.geometry.dispose();
             if (child.material) {
@@ -4799,6 +4810,14 @@ export class DetailView {
               child.material.dispose();
             }
           });
+        }
+        
+        // Clean up portal particles
+        if (orb.portalParticles) {
+          this.scene.remove(orb.portalParticles);
+          if (orb.portalParticles.geometry) orb.portalParticles.geometry.dispose();
+          if (orb.portalParticles.material) orb.portalParticles.material.dispose();
+          orb.portalParticles = null;
         }
         
         if (orb.textSprite) {
@@ -4881,6 +4900,7 @@ export class DetailView {
     // Cleanup moon
     if (this.moon) {
       this.scene.remove(this.moon);
+      if (this.moon.geometry) this.moon.geometry.dispose();
       if (this.moon.material) {
         if (this.moon.material.map) this.moon.material.map.dispose();
         this.moon.material.dispose();
@@ -4991,10 +5011,18 @@ export class DetailView {
     document.removeEventListener('mousedown', this.onMouseDown);
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
+    window.removeEventListener('resize', this.onWindowResize);
+    
+    // Clear arrays and data
+    this.starTwinkleData = [];
+    this.originalStarColors = null;
     
     // Dispose renderer
     if (this.renderer) {
       this.renderer.dispose();
+      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      }
       this.renderer = null;
     }
     
@@ -5012,5 +5040,6 @@ export class DetailView {
     
     this.camera = null;
     this.isActive = false;
+    this.currentPortfolio = null;
   }
 }

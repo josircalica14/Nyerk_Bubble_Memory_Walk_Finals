@@ -30,30 +30,10 @@
     
     <!-- Main container -->
     <main id="app" class="app-container" role="main">
-        <!-- Museum space for 3D transforms -->
+        <!-- Museum space for Three.js -->
         <div id="museum-space" class="museum-space" aria-label="Interactive 3D portfolio space">
-            <!-- Center 3D Title -->
-            <div class="center-title">NYERK</div>
-            
-            <!-- Bubbles will be dynamically inserted here -->
+            <!-- Three.js museum will be rendered here -->
         </div>
-        
-        <!-- Content panel overlay -->
-        <aside id="content-panel" class="content-panel" role="dialog" aria-modal="true" aria-hidden="true">
-            <button class="close-btn" aria-label="Close content panel">&times;</button>
-            <div class="content-body">
-                <img class="content-image" src="" alt="" loading="lazy">
-                <h2 class="content-title"></h2>
-                <p class="content-description"></p>
-            </div>
-            <div class="content-actions">
-                <button class="content-button">View Details</button>
-                <button class="content-button">Contact</button>
-            </div>
-        </aside>
-        
-        <!-- Backdrop overlay -->
-        <div class="backdrop" aria-hidden="true"></div>
         
         <!-- Loading Page -->
         <div id="loading-page" class="loading-page" aria-hidden="true">
@@ -80,12 +60,7 @@
     <script src="js/utils.js"></script>
     <script src="js/config.js"></script>
     <script src="js/AudioManager.js"></script>
-    <script src="js/VisualEffects.js"></script>
-    <script src="js/BubbleManager.js"></script>
-    <script src="js/CameraController.js"></script>
-    <script src="js/ContentPanel.js"></script>
-    <script src="js/InteractionHandler.js"></script>
-    <script src="js/PortfolioMuseum.js"></script>
+    <script src="js/MuseumController.js"></script>
     <script type="module">
         // Import Detail View
         import { DetailView } from './js/threejs/DetailView.js';
@@ -96,47 +71,6 @@
         
         // Store globally
         window.detailView = detailView;
-        
-        // Connect to "Enter Memory Hall" button
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const enterButton = document.querySelector('.content-panel .content-button:first-child');
-                console.log('Looking for Enter button:', enterButton);
-                
-                if (enterButton) {
-                    enterButton.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        console.log('Enter button clicked!');
-                        
-                        // Get accent color from content panel
-                        const contentPanel = document.getElementById('content-panel');
-                        const accentColor = getComputedStyle(contentPanel).getPropertyValue('--bubble-color') || '#FF69B4';
-                        console.log('Accent color:', accentColor);
-                        
-                        // Get current portfolio item from the panel's data attribute
-                        const portfolioId = contentPanel.dataset.portfolioId;
-                        console.log('Portfolio ID:', portfolioId);
-                        
-                        const portfolioItem = window.portfolioData?.find(item => item.id == portfolioId);
-                        console.log('Portfolio item:', portfolioItem);
-                        
-                        // Close content panel
-                        const closeBtn = contentPanel.querySelector('.close-btn');
-                        if (closeBtn) closeBtn.click();
-                        
-                        // Show detail view after panel closes
-                        setTimeout(async () => {
-                            console.log('Showing detail view...');
-                            await detailView.show(accentColor, portfolioItem);
-                        }, 400);
-                    });
-                    
-                    console.log('Detail View connected to Enter button');
-                } else {
-                    console.error('Enter button not found!');
-                }
-            }, 1000);
-        });
     </script>
     <script>
         /**
@@ -153,13 +87,8 @@
             const audioManager = new AudioManager();
             audioManager.init('assets/audio/background-music.mp3');
             
-            // Initialize Visual Effects
-            const visualEffects = new VisualEffects();
-            visualEffects.init();
-            
             // Store globally for debugging
             window.audioManager = audioManager;
-            window.visualEffects = visualEffects;
             
             // Initially hide museum space
             museumSpace.style.opacity = '0';
@@ -221,25 +150,25 @@
                     return;
                 }
                 
-                // Initialize Portfolio Museum with error handling
+                // Initialize Three.js Museum directly (skip CSS museum)
                 try {
-                    const museum = new PortfolioMuseum({
-                        container: container,
-                        data: portfolioData
-                    });
+                    // Hide the center title (NYERK) as it's not needed in Three.js view
+                    const centerTitle = document.querySelector('.center-title');
+                    if (centerTitle) {
+                        centerTitle.style.display = 'none';
+                    }
                     
-                    museum.init();
+                    // Initialize Museum Controller with Three.js as primary view
+                    const museumController = new MuseumController(container, portfolioData);
+                    window.museumController = museumController;
                     
-                    console.log(`Portfolio Museum initialized with ${portfolioData.length} items`);
-                    
-                    // Store museum instance globally for debugging
-                    window.portfolioMuseum = museum;
+                    console.log(`Three.js Museum initialized with ${portfolioData.length} items`);
                     
                 } catch (error) {
-                    console.error('Failed to initialize Portfolio Museum:', error);
+                    console.error('Failed to initialize Three.js Museum:', error);
                     container.innerHTML = 
                         '<p style="color: white; text-align: center; padding: 2rem;">' +
-                        'Failed to load portfolio: ' + error.message + '<br>' +
+                        'Failed to load 3D museum: ' + error.message + '<br>' +
                         'Please refresh the page or check the console for details.</p>';
                 }
             }
