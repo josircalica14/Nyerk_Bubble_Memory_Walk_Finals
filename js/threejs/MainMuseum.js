@@ -69,6 +69,7 @@ export default class MainMuseum {
     this.createEdges(); // Then create edges with gaps at pathway angles
     this.createStars();
     this.createFloatingTitle(); // Add floating title in center
+    this.createRainbowFountain(); // Add rainbow fountain in inner ring
     this.setupEventListeners();
     this.animate();
   }
@@ -212,6 +213,7 @@ export default class MainMuseum {
     
     // Store floor material for pathway creation
     this.floorMaterial = floorMaterial;
+    this.floorMeshes = [entranceFloor, mainFloor, circleFloor];
   }
   
   createNebulaTexture() {
@@ -1349,7 +1351,7 @@ export default class MainMuseum {
     const text = "NYERK";
     const color = new THREE.Color(0xffffff); // White color
     const x = circleCenter.x;
-    const y = 25;
+    const y = 28;
     const z = circleCenter.z;
     
     // Create canvas for text texture
@@ -1597,6 +1599,289 @@ export default class MainMuseum {
     return mesh;
   }
   
+  createRainbowFountain() {
+    const { circleCenter } = this.floorDimensions;
+    const particleCount = 80;
+
+    // Use the actual orb colors from portfolio data (same as the museum orbs)
+    const orbColors = this.portfolioData.map(p => {
+      const c = new THREE.Color(p.color);
+      return [Math.floor(c.r * 255), Math.floor(c.g * 255), Math.floor(c.b * 255)];
+    });
+
+    // Use same particle texture style as createOrbPlatform
+    const textures = orbColors.map(rgb => {
+      const c = document.createElement('canvas');
+      c.width = 32; c.height = 32;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      g.addColorStop(0, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`);
+      g.addColorStop(0.5, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`);
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 32, 32);
+      return new THREE.CanvasTexture(c);
+    });
+
+    const gravity = -0.012;
+    // Particles spawn from top spout (topY=0.2 + 1.52 = 1.72)
+    // and reset when they fall back to water surface (topY - 0.05 = 0.15)
+    const spawnY = 4.85;  // spout tip height
+    const basinY = 0.15;  // water surface — reset level
+    const vy0 = 0.65;
+    const targetRadius = 13;
+    const outwardSpeed = targetRadius * Math.abs(gravity) / (2 * vy0);
+    const particles = [];
+
+    const resetParticle = (p) => {
+      const ud = p.userData;
+      ud.x = circleCenter.x;
+      ud.y = spawnY;
+      ud.z = circleCenter.z;
+
+      const angle = Math.random() * Math.PI * 2;
+      const variation = 0.85 + Math.random() * 0.3;
+      const s = outwardSpeed * variation;
+      ud.vx = Math.cos(angle) * s;
+      ud.vy = vy0;
+      ud.vz = Math.sin(angle) * s;
+
+      p.position.set(ud.x, ud.y, ud.z);
+      p.material.opacity = 1;
+    };
+
+    for (let i = 0; i < particleCount; i++) {
+      const colorIndex = i % orbColors.length;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: textures[colorIndex],
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }));
+
+      const scale = 0.7 + Math.random() * 0.5;
+      sprite.scale.set(scale, scale, 1);
+      sprite.userData = { vx: 0, vy: 0, vz: 0, x: 0, y: 0, z: 0, baseScale: scale };
+
+      resetParticle(sprite);
+
+      // Stagger so fountain looks continuous from the start
+      const staggerFrames = Math.floor(Math.random() * 60);
+      for (let f = 0; f < staggerFrames; f++) {
+        sprite.userData.vy += gravity;
+        sprite.userData.x += sprite.userData.vx;
+        sprite.userData.y += sprite.userData.vy;
+        sprite.userData.z += sprite.userData.vz;
+        sprite.position.set(sprite.userData.x, sprite.userData.y, sprite.userData.z);
+        if (sprite.userData.y <= basinY && sprite.userData.vy < 0) resetParticle(sprite);
+      }
+
+      this.scene.add(sprite);
+      particles.push(sprite);
+    }
+
+    this.fountainParticles = particles;
+    this.fountainGravity = gravity;
+    this.fountainCenter = circleCenter;
+    this.fountainBasinY = basinY;
+    this.fountainSpawnY = spawnY;
+
+    this.createFountainBase(circleCenter);
+  }
+
+  createFountainBase(circleCenter) {
+    const cx = circleCenter.x;
+    const cz = circleCenter.z;
+    const outerRadius = 18;
+    const innerRadius = 14.5;
+    const wallHeight = 0.8;
+    const sinkY = -0.6;
+    const wallY = sinkY + wallHeight / 2;
+    const topY = sinkY + wallHeight; // = 0.2
+
+    const purple = 0x4a2a6a;
+    const purpleLight = 0x6a3a9a;
+
+    const solidMat = new THREE.MeshStandardMaterial({
+      color: purple, emissive: purple, emissiveIntensity: 0.5,
+      metalness: 0.3, roughness: 0.5,
+    });
+    const topMat = new THREE.MeshStandardMaterial({
+      color: purpleLight, emissive: purpleLight, emissiveIntensity: 0.7,
+      metalness: 0.4, roughness: 0.3,
+    });
+
+    // Outer wall (open cylinder)
+    const wall = new THREE.Mesh(
+      new THREE.CylinderGeometry(outerRadius, outerRadius, wallHeight, 64, 1, true),
+      solidMat
+    );
+    wall.position.set(cx, wallY, cz);
+    this.scene.add(wall);
+
+    // Inner wall face (open cylinder)
+    const innerWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(innerRadius, innerRadius, wallHeight, 64, 1, true),
+      solidMat
+    );
+    innerWall.position.set(cx, wallY, cz);
+    this.scene.add(innerWall);
+
+    // Solid purple basin bottom
+    const bottom = new THREE.Mesh(new THREE.CircleGeometry(innerRadius, 64), solidMat);
+    bottom.rotation.x = -Math.PI / 2;
+    bottom.position.set(cx, sinkY + 0.02, cz);
+    this.scene.add(bottom);
+
+    // Top coping ring (flat donut on top of walls)
+    const capRing = new THREE.Mesh(
+      new THREE.RingGeometry(innerRadius, outerRadius + 0.4, 64),
+      topMat
+    );
+    capRing.rotation.x = -Math.PI / 2;
+    capRing.position.set(cx, topY + 0.01, cz);
+    this.scene.add(capRing);
+
+    // Amber glow ring on top edge
+    const glowRing = new THREE.Mesh(
+      new THREE.TorusGeometry(outerRadius + 0.4, 0.15, 16, 64),
+      new THREE.MeshBasicMaterial({ color: 0xF79C00, transparent: true, opacity: 0.85 })
+    );
+    glowRing.rotation.x = Math.PI / 2;
+    glowRing.position.set(cx, topY + 0.02, cz);
+    this.scene.add(glowRing);
+
+    // Rainbow water surface — sits ABOVE the bottom, BELOW the coping ring
+    const waterCanvas = document.createElement('canvas');
+    waterCanvas.width = 256;
+    waterCanvas.height = 256;
+
+    const drawWaterCanvas = (canvas, portfolioData, t) => {
+      const ctx = canvas.getContext('2d');
+      const wcx = canvas.width / 2, wcy = canvas.height / 2, wr = wcx;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(wcx, wcy, wr, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Draw a dark base
+      ctx.fillStyle = `rgba(20, 10, 40, 1)`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Soft blended color pools — each portfolio color as a radial blob
+      // positioned around the circle, slowly drifting
+      const cols = portfolioData.map(p => {
+        const c = new THREE.Color(p.color);
+        return [Math.floor(c.r * 255), Math.floor(c.g * 255), Math.floor(c.b * 255)];
+      });
+      const count = cols.length;
+      cols.forEach((rgb, i) => {
+        const angle = (i / count) * Math.PI * 2 + t * 0.15; // slow drift
+        const dist = wr * 0.45; // keep blobs inside
+        const bx = wcx + Math.cos(angle) * dist;
+        const by = wcy + Math.sin(angle) * dist;
+        const blobR = wr * 0.55;
+        const g = ctx.createRadialGradient(bx, by, 0, bx, by, blobR);
+        g.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.75)`);
+        g.addColorStop(0.5, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.35)`);
+        g.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+
+      // Bright shimmer highlight in center — pulses like light on water
+      const shimmerR = wr * (0.25 + 0.08 * Math.sin(t * 1.8));
+      const shimmer = ctx.createRadialGradient(wcx, wcy, 0, wcx, wcy, shimmerR);
+      shimmer.addColorStop(0, `rgba(255,255,255,${0.35 + 0.15 * Math.sin(t * 2.3)})`);
+      shimmer.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = shimmer;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.restore();
+    };
+
+    drawWaterCanvas(waterCanvas, this.portfolioData, 0);
+    this.drawWaterCanvas = drawWaterCanvas;
+
+    const waterTexture = new THREE.CanvasTexture(waterCanvas);
+    const waterMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(innerRadius - 0.3, 64),
+      new THREE.MeshBasicMaterial({ map: waterTexture, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    waterMesh.rotation.x = -Math.PI / 2;
+    waterMesh.position.set(cx, topY - 0.05, cz); // just inside the basin, below coping ring
+    waterMesh.renderOrder = 2;
+    this.scene.add(waterMesh);
+
+    this.fountainWater = { canvas: waterCanvas, texture: waterTexture };
+
+    // Central tiered fountain structure
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: 0x7a5a9a, emissive: 0x3a1a5a, emissiveIntensity: 0.4,
+      metalness: 0.2, roughness: 0.7,
+    });
+    const accentMat = new THREE.MeshStandardMaterial({
+      color: 0xF79C00, emissive: 0xF79C00, emissiveIntensity: 0.9,
+      metalness: 0.6, roughness: 0.2,
+    });
+
+    const tierParts = [];
+
+    // Tier 1 — wide base pedestal sitting on water surface
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 6.25, 0.75, 32), stoneMat);
+    base.position.set(cx, topY + 0.375, cz);
+    this.scene.add(base); tierParts.push(base);
+
+    // Tier 1 amber rim
+    const baseRim = new THREE.Mesh(new THREE.TorusGeometry(5.5, 0.25, 8, 32), accentMat);
+    baseRim.rotation.x = Math.PI / 2;
+    baseRim.position.set(cx, topY + 0.75, cz);
+    this.scene.add(baseRim); tierParts.push(baseRim);
+
+    // Stem connecting tier 1 to tier 2
+    const stem1 = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 1.0, 1.25, 16), stoneMat);
+    stem1.position.set(cx, topY + 1.375, cz);
+    this.scene.add(stem1); tierParts.push(stem1);
+
+    // Tier 2 — medium bowl
+    const tier2 = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.0, 0.625, 32), stoneMat);
+    tier2.position.set(cx, topY + 2.0, cz);
+    this.scene.add(tier2); tierParts.push(tier2);
+
+    const tier2Rim = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.22, 8, 32), accentMat);
+    tier2Rim.rotation.x = Math.PI / 2;
+    tier2Rim.position.set(cx, topY + 2.3, cz);
+    this.scene.add(tier2Rim); tierParts.push(tier2Rim);
+
+    // Stem connecting tier 2 to tier 3
+    const stem2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.62, 1.0, 16), stoneMat);
+    stem2.position.set(cx, topY + 2.8, cz);
+    this.scene.add(stem2); tierParts.push(stem2);
+
+    // Tier 3 — small top bowl
+    const tier3 = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 2.1, 0.5, 32), stoneMat);
+    tier3.position.set(cx, topY + 3.55, cz);
+    this.scene.add(tier3); tierParts.push(tier3);
+
+    const tier3Rim = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.18, 8, 32), accentMat);
+    tier3Rim.rotation.x = Math.PI / 2;
+    tier3Rim.position.set(cx, topY + 3.8, cz);
+    this.scene.add(tier3Rim); tierParts.push(tier3Rim);
+
+    // Stem connecting tier 3 to spout
+    const stem3 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.38, 0.7, 16), stoneMat);
+    stem3.position.set(cx, topY + 4.15, cz);
+    this.scene.add(stem3); tierParts.push(stem3);
+
+    // Top spout — glowing orb where particles emerge
+    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), accentMat);
+    spout.position.set(cx, topY + 4.65, cz);
+    this.scene.add(spout); tierParts.push(spout);
+
+    this.fountainBase = [wall, innerWall, bottom, capRing, glowRing, waterMesh, ...tierParts];
+  }
+
   setupEventListeners() {
     // Window resize
     window.addEventListener('resize', () => this.onWindowResize());
@@ -1611,12 +1896,12 @@ export default class MainMuseum {
     document.addEventListener('mouseup', this.onMouseUp);
     
     // Listen for return from detail view
-    window.addEventListener('returnToMainMuseum', (event) => {
+    this._returnHandler = (event) => {
       if (event.detail && event.detail.portfolio) {
-        // Position camera immediately
         this.positionCameraAtOrb(event.detail.portfolio);
       }
-    });
+    };
+    window.addEventListener('returnToMainMuseum', this._returnHandler);
     
     // Set cursor style
     this.container.style.cursor = 'grab';
@@ -2086,6 +2371,38 @@ export default class MainMuseum {
       this.titleSprite.position.y = floatY;
     }
     
+    // Animate rainbow fountain particles
+    if (this.fountainParticles) {
+      this.fountainParticles.forEach(p => {
+        const ud = p.userData;
+        ud.vy += this.fountainGravity;
+        ud.x += ud.vx;
+        ud.y += ud.vy;
+        ud.z += ud.vz;
+        p.position.set(ud.x, ud.y, ud.z);
+        // Fade out as it falls back toward basin
+        p.material.opacity = Math.min(1, (ud.y - this.fountainBasinY) / 4 + 0.3);
+        // Reset when it falls back to basin level
+        if (ud.y <= this.fountainBasinY && ud.vy < 0) {
+          const resetAngle = Math.random() * Math.PI * 2;
+          const s = (10 * Math.abs(this.fountainGravity) / (2 * 0.65)) * (0.85 + Math.random() * 0.3);
+          ud.x = this.fountainCenter.x;
+          ud.y = this.fountainSpawnY;
+          ud.z = this.fountainCenter.z;
+          ud.vx = Math.cos(resetAngle) * s;
+          ud.vy = 0.65;
+          ud.vz = Math.sin(resetAngle) * s;
+          p.material.opacity = 1;
+        }
+      });
+    }
+
+    // Animate rainbow water fill in basin
+    if (this.fountainWater && this.drawWaterCanvas) {
+      this.drawWaterCanvas(this.fountainWater.canvas, this.portfolioData, this.time);
+      this.fountainWater.texture.needsUpdate = true;
+    }
+
     // Render
     this.renderer.render(this.scene, this.camera);
   }
@@ -2103,6 +2420,10 @@ export default class MainMuseum {
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
     window.removeEventListener('resize', this.onWindowResize);
+    if (this._returnHandler) {
+      window.removeEventListener('returnToMainMuseum', this._returnHandler);
+      this._returnHandler = null;
+    }
     
     // Clean up bubbles with all their components
     if (this.bubbles) {
@@ -2132,16 +2453,17 @@ export default class MainMuseum {
           this.scene.remove(bubble.light);
         }
         
-        // Platform with particles
+        // Platform with particles (Group — traverse all children)
         if (bubble.platform) {
-          if (bubble.platform.userData.particles) {
-            bubble.platform.userData.particles.forEach(particle => {
-              if (particle.geometry) particle.geometry.dispose();
-              if (particle.material) particle.material.dispose();
-            });
-          }
-          if (bubble.platform.geometry) bubble.platform.geometry.dispose();
-          if (bubble.platform.material) bubble.platform.material.dispose();
+          bubble.platform.traverse(child => {
+            if (child.isMesh || child.isSprite) {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (child.material.map) child.material.map.dispose();
+                child.material.dispose();
+              }
+            }
+          });
           this.scene.remove(bubble.platform);
         }
         
@@ -2206,16 +2528,70 @@ export default class MainMuseum {
       this.stars = [];
     }
     
-    // Clean up title sprite
+    // Clean up fountain particles (dispose each unique texture map)
+    if (this.fountainParticles) {
+      const disposedMaps = new Set();
+      this.fountainParticles.forEach(p => {
+        this.scene.remove(p);
+        if (p.material) {
+          if (p.material.map && !disposedMaps.has(p.material.map)) {
+            disposedMaps.add(p.material.map);
+            p.material.map.dispose();
+          }
+          p.material.dispose();
+        }
+      });
+      this.fountainParticles = null;
+    }
+
+    // Clean up fountain base meshes
+    if (this.fountainBase) {
+      this.fountainBase.forEach(mesh => {
+        this.scene.remove(mesh);
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+          } else {
+            if (mesh.material.map) mesh.material.map.dispose();
+            mesh.material.dispose();
+          }
+        }
+      });
+      this.fountainBase = null;
+    }
+
+    // Clean up fountain water canvas texture
+    if (this.fountainWater) {
+      this.fountainWater.texture.dispose();
+      this.fountainWater = null;
+    }
+    this.drawWaterCanvas = null;
+
+    // Clean up floating title group (Group of layered meshes)
     if (this.titleSprite) {
-      if (this.titleSprite.material) {
-        if (this.titleSprite.material.map) this.titleSprite.material.map.dispose();
-        this.titleSprite.material.dispose();
-      }
+      this.titleSprite.traverse(child => {
+        if (child.isMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+          }
+        }
+      });
       this.scene.remove(this.titleSprite);
       this.titleSprite = null;
     }
     
+    // Clean up floor meshes
+    if (this.floorMeshes) {
+      this.floorMeshes.forEach(mesh => {
+        if (mesh.geometry) mesh.geometry.dispose();
+        this.scene.remove(mesh);
+      });
+      this.floorMeshes = null;
+    }
+
     // Clean up floor materials (shared materials)
     if (this.floorMaterial) {
       this.floorMaterial.dispose();
