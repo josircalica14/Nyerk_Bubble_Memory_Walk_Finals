@@ -33,11 +33,19 @@ class MuseumController {
       window.addEventListener('portfolioSelected', (event) => {
         const portfolio = event.detail;
         console.log('Portfolio selected from Three.js museum:', portfolio);
-        
+
+        // Pause main museum while memory hall is active
+        if (this.threejsMuseum) this.threejsMuseum.pause();
+
         // Trigger the detail view
         if (window.detailView) {
           window.detailView.show(portfolio.color, portfolio);
         }
+      });
+
+      // Resume main museum when returning from memory hall
+      window.addEventListener('returnToMainMuseum', () => {
+        if (this.threejsMuseum) this.threejsMuseum.resume();
       });
       
       console.log('Three.js museum initialized as primary view');

@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export default class MainMuseum {
   constructor(container, portfolioData) {
@@ -27,6 +28,16 @@ export default class MainMuseum {
     
     // Animation
     this.time = 0;
+    this.bobStrength = 0;
+    this.clickAnimProgress = 0;  // 0 = rest, 1 = clicked
+    this.clickAnimTarget = 0;
+    this.handMixer = null;
+    this.handClip = null;
+    this.idlePose = {};
+    this.clickPose = {};
+    this.walkPose = {};
+    this.handRef = null;
+    this.clickAnimLerp = 0;
     this.animationId = null;
     
     // Raycaster for click detection
@@ -70,6 +81,7 @@ export default class MainMuseum {
     this.createStars();
     this.createFloatingTitle(); // Add floating title in center
     this.createRainbowFountain(); // Add rainbow fountain in inner ring
+    this.createPOVHand(); // First-person wireframe hand
     this.setupEventListeners();
     this.animate();
   }
@@ -1882,6 +1894,147 @@ export default class MainMuseum {
     this.fountainBase = [wall, innerWall, bottom, capRing, glowRing, waterMesh, ...tierParts];
   }
 
+  createPOVHand() {
+    this.handScene = new THREE.Scene();
+    this.handCamera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 0.1, 100);
+    this.handCamera.position.set(0, 0, 4);
+
+    // Lights for the hand scene — low ambient + multiple directionals for depth
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.15);
+    this.handScene.add(ambLight);
+
+    // Key light — upper front-right, warm
+    const keyLight = new THREE.DirectionalLight(0xfff5e0, 2.0);
+    keyLight.position.set(3, 4, 5);
+    this.handScene.add(keyLight);
+
+    // Fill light — left side, cooler and dimmer
+    const fillLight = new THREE.DirectionalLight(0xc8d8ff, 0.6);
+    fillLight.position.set(-4, 2, 2);
+    this.handScene.add(fillLight);
+
+    // Rim light — back, creates edge separation
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    rimLight.position.set(0, -2, -5);
+    this.handScene.add(rimLight);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      '/robotic_hand/scene_embedded.gltf',
+      (gltf) => {
+        const hand = gltf.scene;
+
+        hand.traverse(child => {
+          if (child.isMesh || child.isSkinnedMesh) {
+            child.frustumCulled = false;
+            // Hide the grey duplicate, keep only the blue hand
+            if (child.name === 'Object_110') child.visible = false;
+            // Semi-transparent
+            if (child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 0.6;
+            }
+          }
+        });
+
+        const box = new THREE.Box3().setFromObject(hand);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const s = 4.6 / maxDim;
+        hand.scale.setScalar(s);
+
+        const pivot = new THREE.Group();
+        hand.position.set(-center.x * s, -center.y * s, -center.z * s);
+
+        pivot.add(hand);
+        pivot.rotation.y = 3.4 + Math.PI; // flip palm to face away from screen
+        pivot.rotation.x = 1.3; // lay horizontal
+        pivot.rotation.z = 4.7;
+        pivot.position.set(1.2, -0.3, 0);
+
+        this.handScene.add(pivot);
+        this.povHand = pivot;
+        this.povHandBaseY = -1.2;
+        this.povHandBaseX = 1.5;
+
+        // Store idle rotation for lerping
+        this.idleRotation = { x: 1.3, y: 3.4 + Math.PI, z: 4.7 };
+        // Walk rotation — tweak these to taste
+        this.walkRotation = { x: 1.3, y: 2.5 + Math.PI, z: 4.3 };
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          this.handMixer = new THREE.AnimationMixer(hand);
+          this.handClip = gltf.animations[0];
+          const action = this.handMixer.clipAction(this.handClip);
+          action.play();
+          // Seek to idle pose and snapshot bone quaternions
+          this.handMixer.update(this.handClip.duration * 0.55);
+          action.timeScale = 0;
+
+          // Snapshot idle pose (exclude root/global bones that move position)
+          const skipBones = new Set(['GLOBAL_MAIN_CONTROL_R', 'GLOBAL_MAIN_CONTROL_R1', 'Root_joint_01', 'Root_joint_023', 'GLOBAL_cntrl', 'HANDPALM_cntrl']);
+          this.idlePose = {};
+          this.clickPose = {};
+          this.walkPose = {};
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.idlePose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Seek to click pose (0.75) and snapshot
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.75);
+          action.timeScale = 0;
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.clickPose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Seek to walk pose (0.25) and snapshot
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.25);
+          action.timeScale = 0;
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.walkPose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Return to idle pose
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.55);
+          action.timeScale = 0;
+
+          // Stop mixer — we'll drive bones manually from now on
+          action.stop();
+          this.handMixer = null;
+
+          // Apply idle pose
+          hand.traverse(child => {
+            if (child.isBone && this.idlePose[child.name]) {
+              child.quaternion.copy(this.idlePose[child.name]);
+            }
+          });
+
+          this.handRef = hand; // keep ref for lerping
+          this.clickAnimLerp = 0; // 0=idle, 1=click
+          console.log('Hand poses captured. Idle bones:', Object.keys(this.idlePose).length);
+          console.log('Hand animations:', gltf.animations.map(a => a.name));
+        }
+
+        console.log('POV hand loaded — size:', size, 'scale:', s);
+      },
+      undefined,
+      (err) => console.warn('POV hand model failed to load:', err)
+    );
+  }
+
   setupEventListeners() {
     // Window resize
     window.addEventListener('resize', () => this.onWindowResize());
@@ -2158,6 +2311,7 @@ export default class MainMuseum {
   onMouseUp(event) {
     this.isMouseDown = false;
     this.container.style.cursor = 'grab';
+    this.clickAnimTarget = 0;
     
     // Check if it was a click (not a drag)
     const dragDistance = Math.sqrt(
@@ -2175,6 +2329,10 @@ export default class MainMuseum {
     this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    if (this.handCamera) {
+      this.handCamera.aspect = this.container.clientWidth / this.container.clientHeight;
+      this.handCamera.updateProjectionMatrix();
+    }
   }
   
   onBubbleClick(event) {
@@ -2192,7 +2350,14 @@ export default class MainMuseum {
       const clickedBubble = this.bubbles.find(b => b.orb === intersects[0].object);
       if (clickedBubble) {
         console.log('Clicked portfolio:', clickedBubble.portfolio.title);
-        this.onPortfolioClick(clickedBubble.portfolio);
+        if (Object.keys(this.clickPose).length > 0) {
+          this.clickAnimLerp = 1;
+          setTimeout(() => { this.clickAnimLerp = 0; }, 600);
+          // Delay portfolio transition until after click animation plays
+          setTimeout(() => { this.onPortfolioClick(clickedBubble.portfolio); }, 350);
+        } else {
+          this.onPortfolioClick(clickedBubble.portfolio);
+        }
       }
     }
   }
@@ -2403,10 +2568,86 @@ export default class MainMuseum {
       this.fountainWater.texture.needsUpdate = true;
     }
 
-    // Render
+    // Animate POV hand — natural walking bob, fades in/out smoothly
+    if (this.povHand) {
+      const isMoving = this.keys.forward || this.keys.backward || this.keys.left || this.keys.right;
+      this.bobStrength += ((isMoving ? 0.3 : 0) - this.bobStrength) * 0.08;
+      const t = this.time * 10;
+      const bobY = Math.sin(t) * 0.11 * this.bobStrength;
+      const bobX = Math.sin(t * 0.5) * 0.055 * this.bobStrength;
+      const sway = Math.sin(t * 0.5) * 0.13 * this.bobStrength;
+      this.povHand.position.y = this.povHandBaseY + bobY;
+      this.povHand.position.x = this.povHandBaseX + bobX;
+
+      // Lerp pivot rotation between idle and walk rotation, add sway
+      if (this.idleRotation && this.walkRotation) {
+        this._walkLerpCurrent = this._walkLerpCurrent || 0;
+        const walkTarget = this.bobStrength > 0.05 ? 1 : 0;
+        this._walkLerpCurrent += (walkTarget - this._walkLerpCurrent) * 0.08;
+        const w = this._walkLerpCurrent;
+        this.povHand.rotation.x = this.idleRotation.x + (this.walkRotation.x - this.idleRotation.x) * w;
+        this.povHand.rotation.y = this.idleRotation.y + (this.walkRotation.y - this.idleRotation.y) * w;
+        this.povHand.rotation.z = this.idleRotation.z + (this.walkRotation.z - this.idleRotation.z) * w + sway;
+      }
+
+      // Tick animation mixer for rigged hand
+      if (this.handMixer) {
+        this.handMixer.update(deltaTime);
+      } else if (this.handRef && Object.keys(this.idlePose).length > 0) {
+        // Click lerp (0=idle, 1=click)
+        this._clickLerpCurrent = this._clickLerpCurrent || 0;
+        this._clickLerpCurrent += (this.clickAnimLerp - this._clickLerpCurrent) * 0.15;
+
+        // Nudge hand forward and up on click
+        this.povHand.position.z = -this._clickLerpCurrent * 0.3;
+        this.povHand.position.y = this.povHandBaseY + bobY + this._clickLerpCurrent * 0.15;
+
+        this.handRef.traverse(child => {
+          if (child.isBone && this.idlePose[child.name]) {
+            if (this._clickLerpCurrent > 0.01 && this.clickPose[child.name]) {
+              // Click takes priority
+              child.quaternion.slerpQuaternions(this.idlePose[child.name], this.clickPose[child.name], this._clickLerpCurrent);
+            } else if (this._walkLerpCurrent > 0.001 && this.walkPose[child.name]) {
+              // Walk pose — held steady
+              child.quaternion.slerpQuaternions(this.idlePose[child.name], this.walkPose[child.name], this._walkLerpCurrent);
+            } else {
+              child.quaternion.copy(this.idlePose[child.name]);
+            }
+          }
+        });
+      } else {
+        // Fallback Z-punch if no mixer
+        const lerpSpeed = this.clickAnimTarget > this.clickAnimProgress ? 0.25 : 0.12;
+        this.clickAnimProgress += (this.clickAnimTarget - this.clickAnimProgress) * lerpSpeed;
+        this.povHand.position.z = this.clickAnimProgress * 0.4;
+      }
+    }
+
+    // Render main scene
     this.renderer.render(this.scene, this.camera);
+
+    // Render POV hand on top (no depth clear so it overlays)
+    if (this.handScene && this.handCamera) {
+      this.renderer.autoClear = false;
+      this.renderer.clearDepth();
+      this.renderer.render(this.handScene, this.handCamera);
+      this.renderer.autoClear = true;
+    }
   }
-  
+
+  pause() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  resume() {
+    if (!this.animationId) {
+      this.animate();
+    }
+  }
+
   dispose() {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
@@ -2583,6 +2824,51 @@ export default class MainMuseum {
       this.titleSprite = null;
     }
     
+    // Clean up POV hand scene
+    if (this.handScene) {
+      this.handScene.traverse(child => {
+        if (child.isMesh || child.isSkinnedMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(m => {
+                if (m.map) m.map.dispose();
+                if (m.normalMap) m.normalMap.dispose();
+                if (m.roughnessMap) m.roughnessMap.dispose();
+                if (m.metalnessMap) m.metalnessMap.dispose();
+                m.dispose();
+              });
+            } else {
+              if (child.material.map) child.material.map.dispose();
+              if (child.material.normalMap) child.material.normalMap.dispose();
+              if (child.material.roughnessMap) child.material.roughnessMap.dispose();
+              if (child.material.metalnessMap) child.material.metalnessMap.dispose();
+              child.material.dispose();
+            }
+          }
+        }
+      });
+      this.handScene.clear();
+      this.handScene = null;
+      this.handCamera = null;
+      this.povHand = null;
+      this.handRef = null;
+    }
+    if (this.handMixer) {
+      this.handMixer.stopAllAction();
+      this.handMixer = null;
+      this.handClip = null;
+    }
+    // Clear pose snapshots
+    this.idlePose = {};
+    this.clickPose = {};
+    this.walkPose = {};
+    this._clickLerpCurrent = 0;
+    this._walkLerpCurrent = 0;
+    this.clickAnimLerp = 0;
+    this.idleRotation = null;
+    this.walkRotation = null;
+
     // Clean up floor meshes
     if (this.floorMeshes) {
       this.floorMeshes.forEach(mesh => {
@@ -2629,7 +2915,10 @@ export default class MainMuseum {
       this.scene.clear();
       this.scene = null;
     }
-    
+
+    // Clear Three.js loader cache so the GLTF model doesn't stay in memory
+    THREE.Cache.clear();
+
     this.camera = null;
   }
 }
