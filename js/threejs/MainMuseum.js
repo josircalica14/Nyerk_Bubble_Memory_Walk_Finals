@@ -6,7 +6,6 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { loadHandGLTF, buildHand } from './HandLoader.js';
 
 export default class MainMuseum {
   constructor(container, portfolioData) {
@@ -1900,39 +1899,140 @@ export default class MainMuseum {
     this.handCamera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 0.1, 100);
     this.handCamera.position.set(0, 0, 4);
 
+    // Lights for the hand scene — low ambient + multiple directionals for depth
     const ambLight = new THREE.AmbientLight(0xffffff, 0.15);
     this.handScene.add(ambLight);
+
+    // Key light — upper front-right, warm
     const keyLight = new THREE.DirectionalLight(0xfff5e0, 2.0);
     keyLight.position.set(3, 4, 5);
     this.handScene.add(keyLight);
+
+    // Fill light — left side, cooler and dimmer
     const fillLight = new THREE.DirectionalLight(0xc8d8ff, 0.6);
     fillLight.position.set(-4, 2, 2);
     this.handScene.add(fillLight);
+
+    // Rim light — back, creates edge separation
     const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
     rimLight.position.set(0, -2, -5);
     this.handScene.add(rimLight);
 
-    loadHandGLTF().then(gltf => {
-      const { pivot, hand, idlePose, clickPose, walkPose } = buildHand(gltf);
+    const loader = new GLTFLoader();
+    loader.load(
+      'robotic_hand/scene_embedded.gltf',
+      (gltf) => {
+        const hand = gltf.scene;
 
-      this.handScene.add(pivot);
-      this.povHand = pivot;
-      this.povHandBaseY = -1.2;
-      this.povHandBaseX = 1.5;
-      this.idleRotation = { x: 1.3, y: 3.4 + Math.PI, z: 4.7 };
-      this.walkRotation = { x: 1.3, y: 2.5 + Math.PI, z: 4.3 };
-      this.idlePose = idlePose;
-      this.clickPose = clickPose;
-      this.walkPose = walkPose;
-      this.handRef = hand;
-      this.clickAnimLerp = 0;
+        hand.traverse(child => {
+          if (child.isMesh || child.isSkinnedMesh) {
+            child.frustumCulled = false;
+            // Hide the grey duplicate, keep only the blue hand
+            if (child.name === 'Object_110') child.visible = false;
+            // Semi-transparent
+            if (child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 0.6;
+            }
+          }
+        });
 
-      if (this.handCamera) {
-        this.handCamera.aspect = this.container.clientWidth / this.container.clientHeight;
-        this.handCamera.updateProjectionMatrix();
-      }
-      console.log('MainMuseum POV hand ready. Idle bones:', Object.keys(idlePose).length);
-    }).catch(err => console.warn('POV hand model failed to load:', err));
+        const box = new THREE.Box3().setFromObject(hand);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const s = 4.6 / maxDim;
+        hand.scale.setScalar(s);
+
+        const pivot = new THREE.Group();
+        hand.position.set(-center.x * s, -center.y * s, -center.z * s);
+
+        pivot.add(hand);
+        pivot.rotation.y = 3.4 + Math.PI; // flip palm to face away from screen
+        pivot.rotation.x = 1.3; // lay horizontal
+        pivot.rotation.z = 4.7;
+        pivot.position.set(1.2, -0.3, 0);
+
+        this.handScene.add(pivot);
+        this.povHand = pivot;
+        this.povHandBaseY = -1.2;
+        this.povHandBaseX = 1.5;
+
+        // Store idle rotation for lerping
+        this.idleRotation = { x: 1.3, y: 3.4 + Math.PI, z: 4.7 };
+        // Walk rotation — tweak these to taste
+        this.walkRotation = { x: 1.3, y: 2.5 + Math.PI, z: 4.3 };
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          this.handMixer = new THREE.AnimationMixer(hand);
+          this.handClip = gltf.animations[0];
+          const action = this.handMixer.clipAction(this.handClip);
+          action.play();
+          // Seek to idle pose and snapshot bone quaternions
+          this.handMixer.update(this.handClip.duration * 0.55);
+          action.timeScale = 0;
+
+          // Snapshot idle pose (exclude root/global bones that move position)
+          const skipBones = new Set(['GLOBAL_MAIN_CONTROL_R', 'GLOBAL_MAIN_CONTROL_R1', 'Root_joint_01', 'Root_joint_023', 'GLOBAL_cntrl', 'HANDPALM_cntrl']);
+          this.idlePose = {};
+          this.clickPose = {};
+          this.walkPose = {};
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.idlePose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Seek to click pose (0.75) and snapshot
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.75);
+          action.timeScale = 0;
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.clickPose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Seek to walk pose (0.25) and snapshot
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.25);
+          action.timeScale = 0;
+          hand.traverse(child => {
+            if (child.isBone && !skipBones.has(child.name)) {
+              this.walkPose[child.name] = child.quaternion.clone();
+            }
+          });
+
+          // Return to idle pose
+          action.timeScale = 1;
+          this.handMixer.setTime(0);
+          this.handMixer.update(this.handClip.duration * 0.55);
+          action.timeScale = 0;
+
+          // Stop mixer — we'll drive bones manually from now on
+          action.stop();
+          this.handMixer = null;
+
+          // Apply idle pose
+          hand.traverse(child => {
+            if (child.isBone && this.idlePose[child.name]) {
+              child.quaternion.copy(this.idlePose[child.name]);
+            }
+          });
+
+          this.handRef = hand; // keep ref for lerping
+          this.clickAnimLerp = 0; // 0=idle, 1=click
+          console.log('Hand poses captured. Idle bones:', Object.keys(this.idlePose).length);
+          console.log('Hand animations:', gltf.animations.map(a => a.name));
+        }
+
+        console.log('POV hand loaded — size:', size, 'scale:', s);
+      },
+      undefined,
+      (err) => console.warn('POV hand model failed to load:', err)
+    );
   }
 
   setupEventListeners() {
