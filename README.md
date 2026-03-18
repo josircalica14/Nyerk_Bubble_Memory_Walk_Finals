@@ -1,4 +1,4 @@
-Nyerk VR Bubble Musuem Finals Project
+Nyerk VR Memory Orb Museum Finals Project
 
 Members:
 
